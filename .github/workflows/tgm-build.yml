@@ -57,8 +57,8 @@ jobs:
           TGM_KEYSTORE_PASSWORD: ${{ secrets.TGM_KEYSTORE_PASSWORD }}
           TGM_KEY_ALIAS: ${{ secrets.TGM_KEY_ALIAS }}
           TGM_KEY_PASSWORD: ${{ secrets.TGM_KEY_PASSWORD }}
-          TGM_VERSION_CODE: ${{ 250100000 + github.run_number }}
         run: |
+          export TGM_VERSION_CODE=$((250100000 + GITHUB_RUN_NUMBER))
           echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8" >> gradle.properties
           ./gradlew --no-daemon :app:assembleGplayDebug :app:assembleGplayRelease :app:bundleGplayRelease -x lint
           mkdir -p dist
@@ -76,4 +76,4 @@ jobs:
           gh release delete "$tag" --yes --cleanup-tag 2>/dev/null || true
           gh release create "$tag" dist/* --prerelease --target "$GITHUB_SHA" \
             --title "TGM Chat Android $tag ($(git rev-parse --short HEAD))" \
-            --notes "Built by run ${{ github.run_number }}, versionCode ${{ 250100000 + github.run_number }}."
+            --notes "Built by run $GITHUB_RUN_NUMBER, versionCode $((250100000 + GITHUB_RUN_NUMBER))."
