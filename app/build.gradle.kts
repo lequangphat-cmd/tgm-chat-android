@@ -61,7 +61,7 @@ android {
 
         // mayor.minor.hotfix.increment (for increment: 01-50=Alpha / 51-89=RC / 90-99=stable)
         // xx   .xxx  .xx    .xx
-        versionCode = 250000290
+        versionCode = (System.getenv("TGM_VERSION_CODE") ?: "250000290").toInt()
         versionName = "25.0.2"
 
         vectorDrawables.useSupportLibrary = true
@@ -82,15 +82,15 @@ android {
     productFlavors {
         // used for f-droid
         create("generic") {
-            applicationId = "com.nextcloud.talk2"
+            applicationId = "net.tgmdental.chat"
             dimension = "default"
         }
         create("gplay") {
-            applicationId = "com.nextcloud.talk2"
+            applicationId = "net.tgmdental.chat"
             dimension = "default"
         }
         create("qa") {
-            applicationId = "com.nextcloud.talk2.qa"
+            applicationId = "net.tgmdental.chat.qa"
             dimension = "default"
             versionCode = 1
             versionName = "1"
@@ -109,8 +109,24 @@ android {
         unitTests.isReturnDefaultValues = true
     }
 
+    // TGM: release signing from environment (CI secrets). Unsigned when not set.
+    val tgmKeystore = System.getenv("TGM_KEYSTORE_FILE")
+    if (!tgmKeystore.isNullOrEmpty()) {
+        signingConfigs {
+            create("tgmRelease") {
+                storeFile = file(tgmKeystore)
+                storePassword = System.getenv("TGM_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("TGM_KEY_ALIAS")
+                keyPassword = System.getenv("TGM_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (!tgmKeystore.isNullOrEmpty()) {
+                signingConfig = signingConfigs.getByName("tgmRelease")
+            }
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
