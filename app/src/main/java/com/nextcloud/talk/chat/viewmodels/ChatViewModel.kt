@@ -19,6 +19,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
+import com.nextcloud.talk.tgm.TgmUi
 import com.nextcloud.talk.R
 import com.nextcloud.talk.application.NextcloudTalkApplication
 import com.nextcloud.talk.arbitrarystorage.ArbitraryStorageManager
@@ -1617,7 +1618,9 @@ class ChatViewModel @AssistedInject constructor(
                 isPollVotedMessage(currentMessage) ||
                 isEditMessage(currentMessage) ||
                 isThreadCreatedMessage(currentMessage) ||
-                isUnpinnedMessage(currentMessage)
+                isUnpinnedMessage(currentMessage) ||
+                // TGM: hide housekeeping lines (avatar, description, history cleared), as on the web
+                TgmUi.isQuietSystemMessage(currentMessage.value.systemMessageType)
 
         val chatMessageMap = chatMessageList.associateBy { it.jsonMessageId }.toMutableMap()
         val chatMessageIterator = chatMessageMap.iterator()

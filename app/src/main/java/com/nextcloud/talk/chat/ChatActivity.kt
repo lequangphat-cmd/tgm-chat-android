@@ -92,6 +92,7 @@ import androidx.media3.session.SessionToken
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.work.Data
 import androidx.work.OneTimeWorkRequest
+import com.nextcloud.talk.models.json.participants.ParticipantsOverall
 import com.nextcloud.talk.utils.setExpeditedIfSupported
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
@@ -2240,9 +2241,53 @@ class ChatActivity :
             }
             conversation?.type == ConversationEnums.ConversationType.ROOM_GROUP_CALL ||
                 conversation?.type == ConversationEnums.ConversationType.ROOM_PUBLIC_CALL ->
-                conversation.description.orEmpty()
+                tgmGroupSubtitle(conversation)
             else -> ""
         }
+
+    // TGM: member count under the room name of group conversations, as on the web
+    private var tgmMemberCount = 0
+    private var tgmMemberCountToken: String? = null
+
+    private fun tgmGroupSubtitle(conversation: ConversationModel): String {
+        tgmLoadMemberCount(conversation.token)
+        val description = conversation.description.orEmpty()
+        if (tgmMemberCount <= 0) return description
+        val members = resources.getQuantityString(R.plurals.tgm_member_count, tgmMemberCount, tgmMemberCount)
+        return if (description.isBlank()) members else "$members, $description"
+    }
+
+    private fun tgmLoadMemberCount(token: String) {
+        val user = if (::conversationUser.isInitialized) conversationUser else return
+        if (tgmMemberCountToken == token) return
+        tgmMemberCountToken = token
+        val apiVersion = ApiUtils.getConversationApiVersion(user, intArrayOf(ApiUtils.API_V4, 1))
+        ncApi.getPeersForCall(
+            ApiUtils.getCredentials(user.username, user.token),
+            ApiUtils.getUrlForParticipants(apiVersion, user.baseUrl!!, token)
+        )
+            ?.subscribeOn(Schedulers.io())
+            ?.observeOn(AndroidSchedulers.mainThread())
+            ?.subscribe(object : Observer<ParticipantsOverall> {
+                override fun onSubscribe(d: Disposable) {
+                    disposables.add(d)
+                }
+
+                override fun onNext(participantsOverall: ParticipantsOverall) {
+                    tgmMemberCount = participantsOverall.ocs?.data?.size ?: 0
+                    updateToolbarState()
+                }
+
+                override fun onError(e: Throwable) {
+                    Log.w(TAG, "TGM: could not load member count", e)
+                    tgmMemberCountToken = null
+                }
+
+                override fun onComplete() {
+                    // unused
+                }
+            })
+    }
 
     private fun buildOverflowItems(): List<MenuItemData> {
         val items = mutableListOf<MenuItemData>()

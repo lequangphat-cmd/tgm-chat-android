@@ -8,6 +8,8 @@
 package com.nextcloud.talk.ui.chat
 
 import android.content.Context
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ContentTransform
@@ -84,6 +86,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
 import androidx.core.graphics.ColorUtils
 import coil.compose.AsyncImage
+import com.nextcloud.talk.tgm.TgmUi
 import com.nextcloud.talk.R
 import com.nextcloud.talk.application.NextcloudTalkApplication
 import com.nextcloud.talk.chat.ChatActivity
@@ -197,7 +200,17 @@ fun MessageScaffold(
     val viewThemeUtils = LocalViewThemeUtils.current
     val isInspectionMode = LocalInspectionMode.current
     val primaryContainer = colorScheme.primaryContainer
-    val resolvedBubbleColor = remember(bubbleColor, incoming, uiMessage.isDeleted, isInspectionMode, primaryContainer) {
+    // TGM: web bubble colours in the light theme (white with border for others, light blue for own,
+    // yellow for @all); the dark theme keeps upstream colours
+    val tgmLight = colorScheme.surface.luminance() > TGM_LIGHT_LUMINANCE
+    val tgmMentionsAll = uiMessage.messageParameters.values.any { it["type"] == "call" }
+    val tgmBubble = when {
+        !tgmLight || bubbleColor != null || uiMessage.isDeleted -> null
+        tgmMentionsAll -> TgmUi.mentionAllBubble to TgmUi.mentionAllBubbleBorder
+        incoming -> TgmUi.incomingBubble to TgmUi.incomingBubbleBorder
+        else -> TgmUi.outgoingBubble to TgmUi.outgoingBubbleBorder
+    }
+    val upstreamBubbleColor = remember(bubbleColor, incoming, uiMessage.isDeleted, isInspectionMode, primaryContainer) {
         bubbleColor ?: if (incoming) {
             val colorRes = if (uiMessage.isDeleted) {
                 R.color.bg_message_list_incoming_bubble_deleted
@@ -219,6 +232,7 @@ fun MessageScaffold(
             }
         }
     }
+    val resolvedBubbleColor = tgmBubble?.first ?: upstreamBubbleColor
 
     val showQuote = !uiMessage.isDeleted &&
         uiMessage.parentMessage?.let {
@@ -278,6 +292,7 @@ fun MessageScaffold(
                 maxBubbleWidth = messageBubbleMaxWidth,
                 shape = shape,
                 resolvedBubbleColor = resolvedBubbleColor,
+                bubbleBorder = tgmBubble?.second,
                 metadataLayoutMode = metadataLayoutMode,
                 captionText = captionText,
                 showInlineMetadata = showInlineMetadata,
@@ -343,6 +358,7 @@ private fun MessageBubbleWithReactions(
     maxBubbleWidth: Dp,
     shape: RoundedCornerShape,
     resolvedBubbleColor: Color,
+    bubbleBorder: Color?,
     metadataLayoutMode: MetadataLayoutMode,
     captionText: String?,
     showInlineMetadata: Boolean,
@@ -369,7 +385,8 @@ private fun MessageBubbleWithReactions(
         Surface(
             modifier = bubbleModifier,
             color = resolvedBubbleColor,
-            shape = shape
+            shape = shape,
+            border = bubbleBorder?.let { BorderStroke(1.dp, it) }
         ) {
             MessageBubbleContent(
                 uiMessage = uiMessage,
@@ -1240,3 +1257,5 @@ private fun CommonMessageQuotePreview() {
         )
     }
 }
+
+private const val TGM_LIGHT_LUMINANCE = 0.5f

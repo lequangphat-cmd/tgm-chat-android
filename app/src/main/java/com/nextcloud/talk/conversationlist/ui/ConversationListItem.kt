@@ -67,6 +67,7 @@ import coil.memory.MemoryCache
 import coil.imageLoader
 import android.graphics.drawable.BitmapDrawable
 import coil.request.ImageRequest
+import com.nextcloud.talk.tgm.TgmUi
 import com.nextcloud.talk.R
 import com.nextcloud.talk.chat.data.model.ChatMessage
 import com.nextcloud.talk.data.database.mappers.toDomainModel
@@ -535,13 +536,14 @@ private fun UnreadBubble(model: ConversationModel, currentUser: User) {
 private fun FilledUnreadChip(text: String) {
     Box(
         modifier = Modifier
-            .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(12.dp))
+            // TGM: red unread counters, as on the web
+            .background(TgmUi.unreadRed, RoundedCornerShape(12.dp))
             .padding(horizontal = 6.dp, vertical = 2.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
-            color = MaterialTheme.colorScheme.onPrimary,
+            color = Color.White,
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold
         )
@@ -569,13 +571,14 @@ private fun OutlinedUnreadChip(text: String) {
 private fun GreyUnreadChip(text: String) {
     Box(
         modifier = Modifier
-            .background(colorResource(R.color.conversation_unread_bubble), RoundedCornerShape(12.dp))
+            // TGM: red unread counters, as on the web
+            .background(TgmUi.unreadRed, RoundedCornerShape(12.dp))
             .padding(horizontal = 6.dp, vertical = 2.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
-            color = colorResource(R.color.conversation_unread_bubble_text),
+            color = Color.White,
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold
         )
@@ -637,7 +640,7 @@ private fun LastMessageContent(
             chatMessage.actorId == currentUser.userId -> youPrefix
             model.type == ConversationEnums.ConversationType.ROOM_TYPE_ONE_TO_ONE_CALL -> parsedText
             else -> {
-                val actorName = chatMessage.actorDisplayName?.takeIf { it.isNotBlank() }
+                val actorName = TgmUi.shortName(chatMessage.actorDisplayName).takeIf { it.isNotBlank() }
                     ?: if (chatMessage.actorType == "guests" || chatMessage.actorType == "emails") {
                         guestLabel
                     } else {
@@ -658,6 +661,21 @@ private fun LastMessageContent(
     }
 
     val msgType = chatMessage.getCalculateMessageType()
+
+    // TGM: never preview housekeeping system lines ("X đã thêm Y", "đã đặt ảnh"); show the description instead
+    if (model.type != ConversationEnums.ConversationType.ROOM_SYSTEM &&
+        TgmUi.isHiddenPreview(chatMessage.systemMessageType)
+    ) {
+        Text(
+            text = model.description.takeIf { it.isNotBlank() } ?: stringResource(R.string.tgm_no_messages),
+            modifier = modifier,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        return
+    }
 
     // System message
     if (msgType == ChatMessage.MessageType.SYSTEM_MESSAGE ||
@@ -680,7 +698,7 @@ private fun LastMessageContent(
     when (msgType) {
         ChatMessage.MessageType.VOICE_MESSAGE -> {
             val name = chatMessage.messageParameters?.get("file")?.get("name") ?: ""
-            val prefix = authorPrefix(chatMessage, currentUser)
+            val prefix = authorPrefix(chatMessage, currentUser, stringResource(R.string.tgm_you_prefix))
             AttachmentRow(
                 authorPrefix = prefix,
                 iconRes = R.drawable.baseline_mic_24,
@@ -701,7 +719,7 @@ private fun LastMessageContent(
             }
             val mime = chatMessage.messageParameters?.get("file")?.get("mimetype")
             val icon = attachmentIconRes(mime)
-            val prefix = authorPrefix(chatMessage, currentUser)
+            val prefix = authorPrefix(chatMessage, currentUser, stringResource(R.string.tgm_you_prefix))
             AttachmentRow(
                 authorPrefix = prefix,
                 iconRes = icon,
@@ -715,7 +733,7 @@ private fun LastMessageContent(
 
         ChatMessage.MessageType.SINGLE_NC_GEOLOCATION_MESSAGE -> {
             val name = chatMessage.messageParameters?.get("object")?.get("name") ?: ""
-            val prefix = authorPrefix(chatMessage, currentUser)
+            val prefix = authorPrefix(chatMessage, currentUser, stringResource(R.string.tgm_you_prefix))
             AttachmentRow(
                 authorPrefix = prefix,
                 iconRes = R.drawable.baseline_location_pin_24,
@@ -729,7 +747,7 @@ private fun LastMessageContent(
 
         ChatMessage.MessageType.POLL_MESSAGE -> {
             val name = chatMessage.messageParameters?.get("object")?.get("name") ?: ""
-            val prefix = authorPrefix(chatMessage, currentUser)
+            val prefix = authorPrefix(chatMessage, currentUser, stringResource(R.string.tgm_you_prefix))
             AttachmentRow(
                 authorPrefix = prefix,
                 iconRes = R.drawable.baseline_bar_chart_24,
@@ -743,7 +761,7 @@ private fun LastMessageContent(
 
         ChatMessage.MessageType.DECK_CARD -> {
             val name = chatMessage.messageParameters?.get("object")?.get("name") ?: ""
-            val prefix = authorPrefix(chatMessage, currentUser)
+            val prefix = authorPrefix(chatMessage, currentUser, stringResource(R.string.tgm_you_prefix))
             AttachmentRow(
                 authorPrefix = prefix,
                 iconRes = R.drawable.baseline_article_24,
@@ -759,7 +777,7 @@ private fun LastMessageContent(
         ChatMessage.MessageType.SINGLE_LINK_TENOR_MESSAGE,
         ChatMessage.MessageType.SINGLE_LINK_GIF_MESSAGE -> {
             val gifSelf = stringResource(R.string.nc_sent_a_gif_you)
-            val gifOther = stringResource(R.string.nc_sent_a_gif, chatMessage.actorDisplayName ?: "")
+            val gifOther = stringResource(R.string.nc_sent_a_gif, TgmUi.shortName(chatMessage.actorDisplayName))
             Text(
                 text = if (chatMessage.actorId == currentUser.userId) gifSelf else gifOther,
                 modifier = modifier,
@@ -774,7 +792,7 @@ private fun LastMessageContent(
 
         ChatMessage.MessageType.SINGLE_LINK_IMAGE_MESSAGE -> {
             val imgSelf = stringResource(R.string.nc_sent_an_image_you)
-            val imgOther = stringResource(R.string.nc_sent_an_image, chatMessage.actorDisplayName ?: "")
+            val imgOther = stringResource(R.string.nc_sent_an_image, TgmUi.shortName(chatMessage.actorDisplayName))
             Text(
                 text = if (chatMessage.actorId == currentUser.userId) imgSelf else imgOther,
                 modifier = modifier,
@@ -789,7 +807,7 @@ private fun LastMessageContent(
 
         ChatMessage.MessageType.SINGLE_LINK_VIDEO_MESSAGE -> {
             val vidSelf = stringResource(R.string.nc_sent_a_video_you)
-            val vidOther = stringResource(R.string.nc_sent_a_video, chatMessage.actorDisplayName ?: "")
+            val vidOther = stringResource(R.string.nc_sent_a_video, TgmUi.shortName(chatMessage.actorDisplayName))
             Text(
                 text = if (chatMessage.actorId == currentUser.userId) vidSelf else vidOther,
                 modifier = modifier,
@@ -804,7 +822,7 @@ private fun LastMessageContent(
 
         ChatMessage.MessageType.SINGLE_LINK_AUDIO_MESSAGE -> {
             val audSelf = stringResource(R.string.nc_sent_an_audio_you)
-            val audOther = stringResource(R.string.nc_sent_an_audio, chatMessage.actorDisplayName ?: "")
+            val audOther = stringResource(R.string.nc_sent_an_audio, TgmUi.shortName(chatMessage.actorDisplayName))
             Text(
                 text = if (chatMessage.actorId == currentUser.userId) audSelf else audOther,
                 modifier = modifier,
@@ -829,7 +847,7 @@ private fun LastMessageContent(
         chatMessage.actorId == currentUser.userId -> youPrefix
         model.type == ConversationEnums.ConversationType.ROOM_TYPE_ONE_TO_ONE_CALL -> parsedText
         else -> {
-            val actorName = chatMessage.actorDisplayName?.takeIf { it.isNotBlank() }
+            val actorName = TgmUi.shortName(chatMessage.actorDisplayName).takeIf { it.isNotBlank() }
                 ?: if (chatMessage.actorType == "guests" || chatMessage.actorType == "emails") {
                     guestLabel
                 } else {
@@ -891,11 +909,12 @@ private fun AttachmentRow(
     }
 }
 
-private fun authorPrefix(chatMessage: ChatMessage, currentUser: User): String =
+private fun authorPrefix(chatMessage: ChatMessage, currentUser: User, youLabel: String): String =
     if (chatMessage.actorId == currentUser.userId) {
-        "You:"
+        youLabel
     } else {
-        val name = chatMessage.actorDisplayName
+        // TGM: name without the job title, as on the web
+        val name = TgmUi.shortName(chatMessage.actorDisplayName)
         if (!name.isNullOrBlank()) "$name:" else ""
     }
 

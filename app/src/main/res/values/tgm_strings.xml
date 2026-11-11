@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TGM Chat strings, kept apart from upstream strings.xml -->
+<resources>
+    <string name="tgm_no_messages">No messages</string>
+    <string name="tgm_you_prefix">You:</string>
+    <plurals name="tgm_member_count">
+        <item quantity="one">%d member</item>
+        <item quantity="other">%d members</item>
+    </plurals>
+</resources>
