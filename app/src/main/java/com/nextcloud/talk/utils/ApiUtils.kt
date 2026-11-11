@@ -37,7 +37,7 @@ object ApiUtils {
 
     @JvmStatic
     val userAgent = "Mozilla/5.0 (Android) Nextcloud-Talk v"
-        get() = field + BuildConfig.VERSION_NAME
+        get() = field + BuildConfig.UPSTREAM_VERSION_NAME
 
     private const val DEFAULT_LOGIN_PRODUCT_NAME = "Nextcloud Talk"
 

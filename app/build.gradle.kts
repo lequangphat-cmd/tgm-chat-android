@@ -75,6 +75,9 @@ android {
         val localBroadcastPermission = "PRIVATE_BROADCAST"
         manifestPlaceholders["broadcastPermission"] = localBroadcastPermission
         buildConfigField("String", "PERMISSION_LOCAL_BROADCAST", "\"$localBroadcastPermission\"")
+        // Talk server rejects Android clients below its minimum version (HTTP 426), so the
+        // API user agent keeps the upstream release version while versionName is TGM's own.
+        buildConfigField("String", "UPSTREAM_VERSION_NAME", "\"25.0.2\"")
     }
 
     flavorDimensions += "default"

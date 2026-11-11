@@ -18,6 +18,7 @@ for TGM, locked to `https://chat.tgmdental.net`.
 | Brand colour | `res/values/colors.xml` |
 | Vietnamese translation (upstream has none) | `res/values-vi/strings.xml` |
 | Release signing from environment, CI version code | `app/build.gradle.kts` |
+| API user agent keeps upstream version (`UPSTREAM_VERSION_NAME`, update on upstream merge) so the Talk server does not answer 426 "app is outdated" | `app/build.gradle.kts`, `utils/ApiUtils.kt` |
 | CI build, publish to pre-release `build-<branch>` | `.github/workflows/tgm-build.yml` (upstream workflows removed) |
 | Firebase values from secret | `tgm/apply-firebase.py` |
 
