@@ -62,7 +62,7 @@ android {
         // mayor.minor.hotfix.increment (for increment: 01-50=Alpha / 51-89=RC / 90-99=stable)
         // xx   .xxx  .xx    .xx
         versionCode = (System.getenv("TGM_VERSION_CODE") ?: "250000290").toInt()
-        versionName = "25.0.2"
+        versionName = "1.0.0"
 
         vectorDrawables.useSupportLibrary = true
 
