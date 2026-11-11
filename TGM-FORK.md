@@ -29,6 +29,10 @@ for TGM, locked to `https://chat.tgmdental.net`.
 | `TGM_KEYSTORE_BASE64` | upload keystore, base64 |
 | `TGM_KEYSTORE_PASSWORD`, `TGM_KEY_ALIAS`, `TGM_KEY_PASSWORD` | keystore credentials |
 
+## Firebase
+
+Project `tgm-dental` (Spark plan). Android app `net.tgmdental.chat` registered 11/11/2026.
+
 ## Push
 
 The app registers with the TGM push proxy at `https://chat.tgmdental.net/tgm-push`
