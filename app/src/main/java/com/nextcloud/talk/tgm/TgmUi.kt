@@ -15,6 +15,14 @@ import com.nextcloud.talk.chat.data.model.ChatMessage.SystemMessageType
  * kept in one place so upstream merges only touch the call sites marked "TGM:".
  */
 object TgmUi {
+    /**
+     * Only the features in the TGM contract are shown (12/11/2026): the web tabs (Danh bạ, Lịch,
+     * Tệp tin, Nhiệm vụ) and the location, contact and poll attachments are hidden. Set to false
+     * to bring them back.
+     */
+    const val HIDE_EXTRA_FEATURES = true
+    val WEB_TABS_ENABLED = !HIDE_EXTRA_FEATURES
+
     /** Unread counters, like the web conversation list. */
     val unreadRed = Color(0xFFEF3B3B)
 

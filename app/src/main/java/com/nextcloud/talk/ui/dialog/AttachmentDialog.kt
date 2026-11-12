@@ -15,6 +15,7 @@ import android.view.ViewGroup
 import autodagger.AutoInjector
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.nextcloud.talk.tgm.TgmUi
 import com.nextcloud.talk.R
 import com.nextcloud.talk.application.NextcloudTalkApplication
 import com.nextcloud.talk.chat.ChatActivity
@@ -92,6 +93,13 @@ class AttachmentDialog(val activity: Activity, var chatActivity: ChatActivity) :
 
         if (!context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
             dialogAttachmentBinding.menuAttachVideoFromCam.visibility = View.GONE
+        }
+
+        // TGM: features outside the TGM contract scope are hidden (location, contact, poll)
+        if (TgmUi.HIDE_EXTRA_FEATURES) {
+            dialogAttachmentBinding.menuShareLocation.visibility = View.GONE
+            dialogAttachmentBinding.menuAttachContact.visibility = View.GONE
+            dialogAttachmentBinding.menuAttachPoll.visibility = View.GONE
         }
     }
 

@@ -22,6 +22,7 @@ for TGM, locked to `https://chat.tgmdental.net`.
 | Web look (`tgm/TgmUi.kt`): list preview hides system lines and job titles, red unread counters, quiet system lines hidden in chat, web bubble colours (light theme), member count in group header. Call sites marked `TGM:` | `conversationlist/ui/ConversationListItem.kt`, `chat/viewmodels/ChatViewModel.kt`, `ui/chat/ChatMessageScaffold.kt`, `chat/ChatActivity.kt`, `res/values*/tgm_strings.xml` |
 | Login page shown in an in-app WebView (Login Flow v2, polling starts at once) instead of the default browser; switch `TGM_IN_APP_LOGIN` | `account/BrowserLoginActivity.kt`, `res/layout/activity_web_view_login.xml` |
 | Bottom navigation Tin nhắn / Danh bạ / Lịch / Tệp tin / Nhiệm vụ: chat stays native, other tabs show the web pages in `TgmWebActivity` (Basic auth with the app password, web menu hidden by injected CSS, chat/call links open the native chat) | `tgm/TgmTabs.kt`, `tgm/TgmWebActivity.kt`, `conversationlist/ui/ConversationsListScreen.kt`, `AndroidManifest.xml` |
+| Contract scope (12/11/2026): `TgmUi.HIDE_EXTRA_FEATURES` hides the web tabs and the location, contact and poll attachments | `tgm/TgmUi.kt`, `ui/dialog/AttachmentDialog.kt`, `conversationlist/ui/ConversationsListScreen.kt` |
 | CI build, publish to pre-release `build-<branch>` | `.github/workflows/tgm-build.yml` (upstream workflows removed) |
 | Firebase values from secret | `tgm/apply-firebase.py` |
 
