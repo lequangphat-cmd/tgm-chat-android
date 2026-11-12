@@ -13,6 +13,9 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.os.Bundle
+import android.view.View
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.activity.OnBackPressedCallback
 import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
@@ -28,6 +31,7 @@ import com.nextcloud.talk.activities.MainActivity
 import com.nextcloud.talk.application.NextcloudTalkApplication
 import com.nextcloud.talk.application.NextcloudTalkApplication.Companion.sharedApplication
 import com.nextcloud.talk.databinding.ActivityWebViewLoginBinding
+import com.nextcloud.talk.utils.ApiUtils
 import com.nextcloud.talk.utils.bundle.BundleKeys
 import com.nextcloud.talk.utils.bundle.BundleKeys.KEY_BASE_URL
 import kotlinx.coroutines.launch
@@ -44,6 +48,10 @@ class BrowserLoginActivity : BaseActivity() {
     private var reauthorizeAccount = false
     private val onBackPressedCallback = object : OnBackPressedCallback(true) {
         override fun handleOnBackPressed() {
+            if (binding.loginWebView.visibility == View.VISIBLE && binding.loginWebView.canGoBack()) {
+                binding.loginWebView.goBack()
+                return
+            }
             val intent = Intent(context, MainActivity::class.java)
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
             startActivity(intent)
@@ -79,7 +87,10 @@ class BrowserLoginActivity : BaseActivity() {
                             Snackbar.make(binding.root, R.string.nc_common_error_sorry, Snackbar.LENGTH_SHORT).show()
                         }
                         is BrowserLoginActivityViewModel.InitialLoginViewState.InitialLoginRequestSuccess -> {
-                            if (viewModel.waitingForBrowserState.value) {
+                            if (TGM_IN_APP_LOGIN) {
+                                // TGM: show the login page in the app and poll at the same time
+                                showLoginInApp(state.loginUrl)
+                            } else if (viewModel.waitingForBrowserState.value) {
                                 viewModel.setWaitingForBrowser(false)
                                 viewModel.handleWebBrowserLogin()
                             } else {
@@ -148,6 +159,26 @@ class BrowserLoginActivity : BaseActivity() {
         }
     }
 
+    private var tgmLoginPageShown = false
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun showLoginInApp(url: String) {
+        if (tgmLoginPageShown) return
+        tgmLoginPageShown = true
+        val webView = binding.loginWebView
+        webView.settings.javaScriptEnabled = true
+        webView.settings.domStorageEnabled = true
+        webView.settings.userAgentString = ApiUtils.loginUserAgent
+        webView.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                binding.progressBar.visibility = View.GONE
+            }
+        }
+        webView.visibility = View.VISIBLE
+        webView.loadUrl(url)
+        viewModel.handleWebBrowserLogin()
+    }
+
     private fun launchDefaultWebBrowser(url: String) {
         val intent = Intent(Intent.ACTION_VIEW, url.toUri())
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
@@ -175,5 +206,6 @@ class BrowserLoginActivity : BaseActivity() {
 
     companion object {
         private val TAG = BrowserLoginActivity::class.java.simpleName
+        private const val TGM_IN_APP_LOGIN = true
     }
 }

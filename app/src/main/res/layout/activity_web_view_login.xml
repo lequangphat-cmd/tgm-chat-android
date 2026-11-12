@@ -26,6 +26,13 @@
         android:indeterminateTint="@color/white"
         android:indeterminateTintMode="src_in" />
 
+    <!-- TGM: login page shown inside the app instead of the default browser -->
+    <WebView
+        android:id="@+id/login_web_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

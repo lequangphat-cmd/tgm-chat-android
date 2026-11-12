@@ -20,6 +20,7 @@ for TGM, locked to `https://chat.tgmdental.net`.
 | Release signing from environment, CI version code | `app/build.gradle.kts` |
 | API user agent keeps upstream version (`UPSTREAM_VERSION_NAME`, update on upstream merge) so the Talk server does not answer 426 "app is outdated" | `app/build.gradle.kts`, `utils/ApiUtils.kt` |
 | Web look (`tgm/TgmUi.kt`): list preview hides system lines and job titles, red unread counters, quiet system lines hidden in chat, web bubble colours (light theme), member count in group header. Call sites marked `TGM:` | `conversationlist/ui/ConversationListItem.kt`, `chat/viewmodels/ChatViewModel.kt`, `ui/chat/ChatMessageScaffold.kt`, `chat/ChatActivity.kt`, `res/values*/tgm_strings.xml` |
+| Login page shown in an in-app WebView (Login Flow v2, polling starts at once) instead of the default browser; switch `TGM_IN_APP_LOGIN` | `account/BrowserLoginActivity.kt`, `res/layout/activity_web_view_login.xml` |
 | CI build, publish to pre-release `build-<branch>` | `.github/workflows/tgm-build.yml` (upstream workflows removed) |
 | Firebase values from secret | `tgm/apply-firebase.py` |
 
