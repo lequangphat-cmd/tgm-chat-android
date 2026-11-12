@@ -95,11 +95,10 @@ class AttachmentDialog(val activity: Activity, var chatActivity: ChatActivity) :
             dialogAttachmentBinding.menuAttachVideoFromCam.visibility = View.GONE
         }
 
-        // TGM: features outside the TGM contract scope are hidden (location, contact, poll)
-        if (TgmUi.HIDE_EXTRA_FEATURES) {
+        // TGM: same features as the web, which cannot send a location or a phone contact
+        if (TgmUi.HIDE_APP_ONLY_ATTACHMENTS) {
             dialogAttachmentBinding.menuShareLocation.visibility = View.GONE
             dialogAttachmentBinding.menuAttachContact.visibility = View.GONE
-            dialogAttachmentBinding.menuAttachPoll.visibility = View.GONE
         }
     }
 

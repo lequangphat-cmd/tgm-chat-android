@@ -16,12 +16,12 @@ import com.nextcloud.talk.chat.data.model.ChatMessage.SystemMessageType
  */
 object TgmUi {
     /**
-     * Only the features in the TGM contract are shown (12/11/2026): the web tabs (Danh bạ, Lịch,
-     * Tệp tin, Nhiệm vụ) and the location, contact and poll attachments are hidden. Set to false
-     * to bring them back.
+     * Phát 12/11/2026: Danh bạ, Lịch, Tệp tin, Nhiệm vụ stay as extras, in the app as the same web
+     * pages so they are always in sync with the web. Attachments the web cannot send (location,
+     * phone contact) are hidden so app and web offer the same features.
      */
-    const val HIDE_EXTRA_FEATURES = true
-    val WEB_TABS_ENABLED = !HIDE_EXTRA_FEATURES
+    const val WEB_TABS_ENABLED = true
+    const val HIDE_APP_ONLY_ATTACHMENTS = true
 
     /** Unread counters, like the web conversation list. */
     val unreadRed = Color(0xFFEF3B3B)
