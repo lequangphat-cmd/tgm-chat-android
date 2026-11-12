@@ -5,4 +5,10 @@
     <plurals name="tgm_member_count">
         <item quantity="other">%d thành viên</item>
     </plurals>
+    <string name="tgm_tab_chat">Tin nhắn</string>
+    <string name="tgm_tab_contacts">Danh bạ</string>
+    <string name="tgm_tab_calendar">Lịch</string>
+    <string name="tgm_tab_files">Tệp tin</string>
+    <string name="tgm_tab_tasks">Nhiệm vụ</string>
+    <string name="tgm_downloading">Đang tải %1$s</string>
 </resources>

@@ -49,6 +49,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.nextcloud.talk.tgm.TgmBottomNav
+import com.nextcloud.talk.tgm.TgmTab
 import com.nextcloud.talk.R
 import com.nextcloud.talk.components.ColoredStatusBar
 import com.nextcloud.talk.conversationlist.viewmodels.ConversationsListViewModel
@@ -244,8 +246,15 @@ fun ConversationsListScreen(
     MaterialTheme(colorScheme = colorScheme) {
         ColoredStatusBar()
 
+        // TGM: bottom navigation like the web menu (not while picking a conversation to share to)
+        val showTgmNav = !showShareTo && !isForward && !isSearchActive
         Scaffold(
             contentWindowInsets = WindowInsets.safeDrawing,
+            bottomBar = {
+                if (showTgmNav) {
+                    TgmBottomNav(selected = TgmTab.CHAT, user = state.currentUser)
+                }
+            },
             topBar = {
                 Column(modifier = Modifier.fillMaxWidth().statusBarsPadding()) {
                     StatusBannerRow(isOffline = !isOnline, isMaintenanceMode = isMaintenanceMode)
@@ -281,6 +290,7 @@ fun ConversationsListScreen(
                 modifier = Modifier
                     .padding(
                         top = paddingValues.calculateTopPadding(),
+                        bottom = if (showTgmNav) paddingValues.calculateBottomPadding() else 0.dp,
                         start = paddingValues.calculateStartPadding(layoutDirection),
                         end = paddingValues.calculateEndPadding(layoutDirection)
                     )

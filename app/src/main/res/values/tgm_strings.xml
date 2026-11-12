@@ -7,4 +7,10 @@
         <item quantity="one">%d member</item>
         <item quantity="other">%d members</item>
     </plurals>
+    <string name="tgm_tab_chat">Messages</string>
+    <string name="tgm_tab_contacts">Contacts</string>
+    <string name="tgm_tab_calendar">Calendar</string>
+    <string name="tgm_tab_files">Files</string>
+    <string name="tgm_tab_tasks">Tasks</string>
+    <string name="tgm_downloading">Downloading %1$s</string>
 </resources>

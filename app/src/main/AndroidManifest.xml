@@ -164,6 +164,13 @@
             android:name=".chat.ScheduledMessagesActivity"
             android:theme="@style/AppTheme" />
 
+        <!-- TGM: web tabs (Danh bạ, Lịch, Tệp tin, Nhiệm vụ) -->
+        <activity
+            android:name=".tgm.TgmWebActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:launchMode="singleTask"
+            android:theme="@style/AppTheme" />
+
         <activity
             android:name=".conversationlist.ConversationsListActivity"
             android:exported="true"
