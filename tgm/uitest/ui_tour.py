@@ -90,7 +90,7 @@ def check_credentials(user, password):
 
 def main():
     os.makedirs(OUT, exist_ok=True)
-    user, password = os.environ["TGM_TEST_USER"], os.environ["TGM_TEST_APP_PASSWORD"]
+    user, password = os.environ["TGM_TEST_USER"].strip(), os.environ["TGM_TEST_APP_PASSWORD"].strip()
     q = urllib.parse.quote
     report.append("credential check: " + check_credentials(user, password))
     uri = f"nc://login/user:{q(user)}&password:{q(password)}&server:{q(SERVER)}"
