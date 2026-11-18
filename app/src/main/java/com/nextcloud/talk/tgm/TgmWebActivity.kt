@@ -235,7 +235,9 @@ class TgmWebActivity : BaseActivity() {
                 '.tgm-sidebar, .tgm-bottom-nav, #header { display: none !important; }' +
                 ':root, body { --header-height: 0px !important; --tgm-sidebar-width: 0px !important;' +
                 ' --tgm-bottom-nav-height: 0px !important; }' +
-                'body { padding-left: 0 !important; padding-bottom: 0 !important; }';
+                'body { padding-left: 0 !important; padding-bottom: 0 !important; }' +
+                '#content.app-calendar .app-content { padding-top: 50px !important;' +
+                ' box-sizing: border-box !important; }';
               (document.head || document.documentElement).appendChild(style);
             })();
         """
