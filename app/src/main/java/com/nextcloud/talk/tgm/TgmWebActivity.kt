@@ -12,6 +12,7 @@ import android.app.DownloadManager
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.content.MutableContextWrapper
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
@@ -24,6 +25,7 @@ import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
@@ -60,6 +62,7 @@ import com.nextcloud.talk.utils.bundle.BundleKeys.KEY_ROOM_TOKEN
 class TgmWebActivity : BaseActivity() {
 
     private var webView: WebView? = null
+    private var container: FrameLayout? = null
     private var selectedTab by mutableStateOf(TgmTab.CONTACTS)
     private var loading by mutableStateOf(true)
     private var fileCallback: ValueCallback<Array<Uri>>? = null
@@ -102,7 +105,12 @@ class TgmWebActivity : BaseActivity() {
                     Box(modifier = Modifier.padding(padding).fillMaxSize()) {
                         AndroidView(
                             modifier = Modifier.fillMaxSize(),
-                            factory = { context -> createWebView(context).also { webView = it } }
+                            factory = { context ->
+                                FrameLayout(context).also {
+                                    container = it
+                                    showTab(selectedTab)
+                                }
+                            }
                         )
                         if (loading) {
                             LinearProgressIndicator(modifier = Modifier.align(Alignment.TopCenter))
@@ -124,31 +132,82 @@ class TgmWebActivity : BaseActivity() {
             finish()
             return
         }
+        if (tab == selectedTab && webView != null) {
+            // same tab tapped again: back to the start page of the tab
+            webView?.loadUrl(baseUrl + tab.path, mapOf("Authorization" to authHeader))
+            return
+        }
         selectedTab = tab
-        webView?.loadUrl(baseUrl + tab.path, mapOf("Authorization" to authHeader))
+        showTab(tab)
     }
 
+    /**
+     * TGM: each web tab keeps its own WebView in [TgmWebPool], so switching tabs (or going back to
+     * Tin nhắn and returning) shows the page at once instead of loading Nextcloud again.
+     */
+    private fun showTab(tab: TgmTab) {
+        val host = container ?: return
+        val key = poolKey(tab)
+        val (view, isNew) = TgmWebPool.obtain(this, key) { context -> newWebView(context) }
+        attachClients(view)
+        host.removeAllViews()
+        (view.parent as? FrameLayout)?.removeView(view)
+        val match = FrameLayout.LayoutParams.MATCH_PARENT
+        host.addView(view, FrameLayout.LayoutParams(match, match))
+        webView = view
+        if (isNew) {
+            loading = true
+            view.loadUrl(baseUrl + (tab.path ?: "/"), mapOf("Authorization" to authHeader))
+        } else {
+            loading = view.progress < FULL_PROGRESS
+        }
+    }
+
+    /** Loads the other web tabs in the background once the first one is ready. */
+    private fun preloadOtherTabs() {
+        TgmTab.entries.filter { it.path != null && it != selectedTab }.forEach { tab ->
+            val (view, isNew) = TgmWebPool.obtain(this, poolKey(tab)) { context -> newWebView(context) }
+            if (isNew) {
+                attachClients(view)
+                view.loadUrl(baseUrl + tab.path, mapOf("Authorization" to authHeader))
+            }
+        }
+    }
+
+    private fun poolKey(tab: TgmTab) = "$baseUrl|${intent.getStringExtra(EXTRA_USERNAME)}|${tab.name}"
+
     @SuppressLint("SetJavaScriptEnabled")
-    private fun createWebView(context: Context): WebView {
+    private fun newWebView(context: Context): WebView {
         CookieManager.getInstance().setAcceptCookie(true)
         val view = WebView(context)
         view.settings.javaScriptEnabled = true
         view.settings.domStorageEnabled = true
+        view.settings.offscreenPreRaster = true
         view.settings.userAgentString = view.settings.userAgentString + " TGMChatApp"
         CookieManager.getInstance().setAcceptThirdPartyCookies(view, true)
+        return view
+    }
 
+    /** Clients point at the current activity, so they are set again whenever a pooled view is shown. */
+    private fun attachClients(view: WebView) {
         view.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean =
                 handleLink(request.url)
 
             override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
-                loading = true
+                if (view === webView) loading = true
                 view.evaluateJavascript(HIDE_WEB_SHELL_JS, null)
             }
 
             override fun onPageFinished(view: WebView, url: String?) {
-                loading = false
                 view.evaluateJavascript(HIDE_WEB_SHELL_JS, null)
+                if (view === webView) {
+                    loading = false
+                    if (!preloaded) {
+                        preloaded = true
+                        preloadOtherTabs()
+                    }
+                }
             }
         }
         view.webChromeClient = object : WebChromeClient() {
@@ -166,9 +225,9 @@ class TgmWebActivity : BaseActivity() {
         view.setDownloadListener { url, userAgent, contentDisposition, mimetype, _ ->
             download(url, userAgent, contentDisposition, mimetype)
         }
-        view.loadUrl(baseUrl + (selectedTab.path ?: "/"), mapOf("Authorization" to authHeader))
-        return view
     }
+
+    private var preloaded = false
 
     /** Chat and call links open the native chat, other servers open in the browser. */
     private fun handleLink(uri: Uri): Boolean {
@@ -209,8 +268,11 @@ class TgmWebActivity : BaseActivity() {
     }
 
     override fun onDestroy() {
-        webView?.destroy()
+        // keep the pooled WebViews alive, only let go of this activity
+        container?.removeAllViews()
+        container = null
         webView = null
+        TgmWebPool.release(this)
         super.onDestroy()
     }
 
@@ -222,6 +284,8 @@ class TgmWebActivity : BaseActivity() {
         private const val EXTRA_BASE_URL = "tgm_base_url"
         private const val EXTRA_USERNAME = "tgm_username"
         private const val EXTRA_TOKEN = "tgm_token"
+
+        private const val FULL_PROGRESS = 100
 
         private val CALL_LINK = Regex("""^/call/([A-Za-z0-9]+)""")
 
@@ -251,5 +315,35 @@ class TgmWebActivity : BaseActivity() {
                 .addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
             context.startActivity(intent)
         }
+    }
+}
+
+/** TGM: keeps one WebView per web tab for the life of the app process. */
+object TgmWebPool {
+    private val views = HashMap<String, WebView>()
+
+    /** Returns the WebView for [key] (bound to [activity]) and whether it was just created. */
+    fun obtain(activity: Context, key: String, create: (Context) -> WebView): Pair<WebView, Boolean> {
+        views[key]?.let { view ->
+            (view.context as? MutableContextWrapper)?.baseContext = activity
+            return view to false
+        }
+        val view = create(MutableContextWrapper(activity))
+        views[key] = view
+        return view to true
+    }
+
+    /** Points the pooled views at the application context so [activity] can be freed. */
+    fun release(activity: Context) {
+        views.values.forEach { view ->
+            val wrapper = view.context as? MutableContextWrapper
+            if (wrapper?.baseContext === activity) wrapper.baseContext = activity.applicationContext
+        }
+    }
+
+    /** Drops every pooled view, e.g. after logout. */
+    fun clear() {
+        views.values.forEach { it.destroy() }
+        views.clear()
     }
 }
