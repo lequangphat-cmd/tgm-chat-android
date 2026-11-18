@@ -30,11 +30,13 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -45,6 +47,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
 import autodagger.AutoInjector
 import com.nextcloud.talk.R
 import com.nextcloud.talk.activities.BaseActivity
@@ -65,6 +69,7 @@ class TgmWebActivity : BaseActivity() {
     private var container: FrameLayout? = null
     private var selectedTab by mutableStateOf(TgmTab.CONTACTS)
     private var loading by mutableStateOf(true)
+    private var firstLoad by mutableStateOf(true)
     private var fileCallback: ValueCallback<Array<Uri>>? = null
 
     private val baseUrl by lazy { intent.getStringExtra(EXTRA_BASE_URL).orEmpty().trimEnd('/') }
@@ -112,7 +117,15 @@ class TgmWebActivity : BaseActivity() {
                                 }
                             }
                         )
-                        if (loading) {
+                        if (firstLoad) {
+                            // cover the blank page while Nextcloud starts the first time
+                            Box(
+                                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                            }
+                        } else if (loading) {
                             LinearProgressIndicator(modifier = Modifier.align(Alignment.TopCenter))
                         }
                     }
@@ -155,6 +168,7 @@ class TgmWebActivity : BaseActivity() {
         val match = FrameLayout.LayoutParams.MATCH_PARENT
         host.addView(view, FrameLayout.LayoutParams(match, match))
         webView = view
+        firstLoad = isNew || view.progress < FULL_PROGRESS
         if (isNew) {
             loading = true
             view.loadUrl(baseUrl + (tab.path ?: "/"), mapOf("Authorization" to authHeader))
@@ -185,6 +199,10 @@ class TgmWebActivity : BaseActivity() {
         view.settings.offscreenPreRaster = true
         view.settings.userAgentString = view.settings.userAgentString + " TGMChatApp"
         CookieManager.getInstance().setAcceptThirdPartyCookies(view, true)
+        // hide the web menu before the first paint, so the web bottom bar never flashes over the app's
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            WebViewCompat.addDocumentStartJavaScript(view, HIDE_WEB_SHELL_JS, setOf("*"))
+        }
         return view
     }
 
@@ -203,6 +221,7 @@ class TgmWebActivity : BaseActivity() {
                 view.evaluateJavascript(HIDE_WEB_SHELL_JS, null)
                 if (view === webView) {
                     loading = false
+                    firstLoad = false
                     if (!preloaded) {
                         preloaded = true
                         preloadOtherTabs()
