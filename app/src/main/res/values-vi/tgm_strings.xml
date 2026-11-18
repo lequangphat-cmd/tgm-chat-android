@@ -10,5 +10,6 @@
     <string name="tgm_tab_calendar">Lịch</string>
     <string name="tgm_tab_files">Tệp tin</string>
     <string name="tgm_tab_tasks">Nhiệm vụ</string>
+    <string name="tgm_tab_settings">Cài đặt</string>
     <string name="tgm_downloading">Đang tải %1$s</string>
 </resources>

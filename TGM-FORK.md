@@ -24,7 +24,7 @@ for TGM, locked to `https://chat.tgmdental.net`.
 | Bottom navigation Tin nhắn / Danh bạ / Lịch / Tệp tin / Nhiệm vụ: chat stays native, other tabs show the web pages in `TgmWebActivity` (Basic auth with the app password, web menu hidden by injected CSS, chat/call links open the native chat; one WebView per tab kept in `TgmWebPool` and the other tabs preloaded, so switching tabs does not reload) | `tgm/TgmTabs.kt`, `tgm/TgmWebActivity.kt`, `conversationlist/ui/ConversationsListScreen.kt`, `AndroidManifest.xml` |
 | Same features as the web: `TgmUi.WEB_TABS_ENABLED` (web tabs on), `TgmUi.HIDE_APP_ONLY_ATTACHMENTS` hides location and phone contact attachments | `tgm/TgmUi.kt`, `ui/dialog/AttachmentDialog.kt`, `conversationlist/ui/ConversationsListScreen.kt` |
 | App always in Vietnamese (`tgm/TgmLocale.kt`, `attachBaseContext` override) | `application/NextcloudTalkApplication.kt`, `activities/BaseActivity.kt`, the four activities that extend `AppCompatActivity` directly |
-| "Nhiệm vụ" tab off (`TgmTab.TASKS.enabled`) while the server has no Tasks/Deck app | `tgm/TgmTabs.kt` |
+| Bottom tabs per contract (Phát 18/11): Tin nhắn, Danh bạ, Tệp tin, Cài đặt (native settings); Lịch and Nhiệm vụ off via `TgmTab.enabled` | `tgm/TgmTabs.kt`, `res/values*/tgm_strings.xml` |
 | CI build, publish to pre-release `build-<branch>` | `.github/workflows/tgm-build.yml` (upstream workflows removed) |
 | Firebase values from secret | `tgm/apply-firebase.py` |
 
