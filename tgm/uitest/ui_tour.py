@@ -73,11 +73,21 @@ def main():
     uri = f"nc://login/user:{q(user)}&password:{q(password)}&server:{q(SERVER)}"
     adb("shell", "am", "start", "-n", f"{PKG}/com.nextcloud.talk.tgm.TgmTestLogin", "--es", "KEY_FROM_QR", f"'{uri}'")
     # quoted: adb shell joins args into one device shell line, where "&" would split it
+    time.sleep(8)
+    shot("sau-dang-nhap")
     t = wait_for(lambda: find("Tin nhắn") is not None, 120)
     report.append(f"login to conversation list: {t if t is None else round(t, 1)} s")
+    if t is None:
+        # keep the app log for diagnosis, with the secrets masked
+        log = adb("logcat", "-d", "-v", "time", check=False)
+        for secret in {user, password, q(user), q(password)}:
+            log = log.replace(secret, "***")
+        keep = [l for l in log.splitlines() if re.search(r"tgm|talk|login|account|verif|okhttp|ssl|http", l, re.I)]
+        with open(os.path.join(OUT, "logcat.txt"), "w") as f:
+            f.write("\n".join(keep[-1500:]) + "\n")
     time.sleep(3)
     # dismiss permission dialogs if any
-    for label in ("Allow", "Cho phép", "Dismiss", "Để sau"):
+    for label in ("Wait", "Allow", "Cho phép", "Dismiss", "Để sau"):
         n = find(label)
         if n is not None:
             tap(n)
