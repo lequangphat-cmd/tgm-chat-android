@@ -373,7 +373,7 @@ class TgmWebActivity : BaseActivity() {
         /** Hides the web menu, header and bottom bar: the app draws its own navigation. */
         private const val HIDE_WEB_SHELL_JS = """
             (function () {
-              if (document.getElementById('tgm-app-embed')) return;
+              if (!document.documentElement || document.getElementById('tgm-app-embed')) return;
               var style = document.createElement('style');
               style.id = 'tgm-app-embed';
               style.textContent =
