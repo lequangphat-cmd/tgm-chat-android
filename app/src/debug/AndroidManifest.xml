@@ -5,7 +5,7 @@
   SPDX-License-Identifier: GPL-3.0-or-later
 
   TGM: debug builds only. Lets the CI UI test log in with a test account
-  (adb am start ... --es KEY_FROM_QR "nc://login/...") without the web login page.
+  (adb am start with the KEY_FROM_QR extra, an nc://login/ URI) without the web login page.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
