@@ -58,4 +58,11 @@ object TgmUi {
         val trimmed = name?.trim().orEmpty()
         return TITLED_NAME.matchEntire(trimmed)?.groupValues?.get(1) ?: trimmed
     }
+
+    private val CHAT_DATE: java.time.format.DateTimeFormatter =
+        java.time.format.DateTimeFormatter.ofPattern("EEEE, dd/MM/yyyy", java.util.Locale.forLanguageTag("vi-VN"))
+
+    /** Date separator text in chat, e.g. "Thứ Tư, 11/11/2026". */
+    fun chatDate(date: java.time.LocalDate): String =
+        CHAT_DATE.format(date).replaceFirstChar { it.uppercase() }
 }

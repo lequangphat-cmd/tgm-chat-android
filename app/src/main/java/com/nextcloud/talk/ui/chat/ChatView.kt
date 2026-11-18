@@ -82,7 +82,6 @@ import kotlinx.coroutines.withTimeoutOrNull
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 private const val LONG_1000 = 1000L
 private const val LOAD_MORE_BUFFER_ITEMS = 5
@@ -585,7 +584,7 @@ fun DateHeader(date: LocalDate) {
     val text = when (date) {
         LocalDate.now() -> stringResource(R.string.nc_date_header_today)
         LocalDate.now().minusDays(1) -> stringResource(R.string.nc_date_header_yesterday)
-        else -> date.format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))
+        else -> com.nextcloud.talk.tgm.TgmUi.chatDate(date) // TGM: "Thứ Tư, 11/11/2026"
     }
     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         DateHeaderLabel(text = text)
@@ -631,11 +630,11 @@ fun formatTime(timestampMillis: Long): String {
 }
 
 fun formatTime(localDate: LocalDate): String {
-    val formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy")
+    // TGM: Vietnamese labels and date format, same as the date separators
     val text = when (localDate) {
-        LocalDate.now() -> "Today"
-        LocalDate.now().minusDays(1) -> "Yesterday"
-        else -> localDate.format(formatter)
+        LocalDate.now() -> "Hôm nay"
+        LocalDate.now().minusDays(1) -> "Hôm qua"
+        else -> com.nextcloud.talk.tgm.TgmUi.chatDate(localDate)
     }
     return text
 }
