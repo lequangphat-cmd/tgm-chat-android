@@ -175,6 +175,8 @@ class BrowserLoginActivity : BaseActivity() {
             }
         }
         webView.visibility = View.VISIBLE
+        // TGM: the "continue in the browser" hint and cancel button do not apply in-app (back cancels)
+        binding.cancelContainer.visibility = View.GONE
         webView.loadUrl(url)
         viewModel.handleWebBrowserLogin()
     }
