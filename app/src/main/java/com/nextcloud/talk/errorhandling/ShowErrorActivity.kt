@@ -41,6 +41,11 @@ import kotlinx.coroutines.launch
 
 class ShowErrorActivity : AppCompatActivity() {
 
+    // TGM: always Vietnamese
+    override fun attachBaseContext(newBase: android.content.Context) {
+        super.attachBaseContext(com.nextcloud.talk.tgm.TgmLocale.wrap(newBase))
+    }
+
     companion object {
         const val EXTRA_CRASH_REPORT = "crash_report"
         const val EXTRA_CRASH_TITLE = "crash_title"

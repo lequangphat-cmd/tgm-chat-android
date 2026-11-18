@@ -32,6 +32,11 @@ import javax.inject.Inject
 @AutoInjector(NextcloudTalkApplication::class)
 class LockedActivity : AppCompatActivity() {
 
+    // TGM: always Vietnamese
+    override fun attachBaseContext(newBase: android.content.Context) {
+        super.attachBaseContext(com.nextcloud.talk.tgm.TgmLocale.wrap(newBase))
+    }
+
     @Inject
     lateinit var context: Context
 

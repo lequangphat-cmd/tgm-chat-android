@@ -96,6 +96,11 @@ import javax.inject.Singleton
 class NextcloudTalkApplication :
     Application(),
     LifecycleObserver {
+
+    // TGM: always Vietnamese (notifications and other texts built from the application context)
+    override fun attachBaseContext(base: android.content.Context) {
+        super.attachBaseContext(com.nextcloud.talk.tgm.TgmLocale.wrap(base))
+    }
     //region Fields (components)
     lateinit var componentApplication: NextcloudTalkApplicationComponent
         private set
@@ -160,10 +165,6 @@ class NextcloudTalkApplication :
     override fun onCreate() {
         Log.d(TAG, "onCreate")
         sharedApplication = this
-        // TGM: the app is for Vietnamese staff, so it is always in Vietnamese, whatever the phone language
-        androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
-            androidx.core.os.LocaleListCompat.forLanguageTags("vi")
-        )
 
         // The crash-reporter process only needs to show ShowErrorActivity — skip all heavy
         // initialization (WebRTC, Room, Dagger) so the error screen can actually render.

@@ -37,6 +37,11 @@ import javax.inject.Inject
 @AutoInjector(NextcloudTalkApplication::class)
 class FullScreenTextViewerActivity : AppCompatActivity() {
 
+    // TGM: always Vietnamese
+    override fun attachBaseContext(newBase: android.content.Context) {
+        super.attachBaseContext(com.nextcloud.talk.tgm.TgmLocale.wrap(newBase))
+    }
+
     @Inject
     lateinit var viewThemeUtils: ViewThemeUtils
     private lateinit var textFile: File

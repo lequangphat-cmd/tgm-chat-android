@@ -65,6 +65,11 @@ import javax.inject.Inject
 @AutoInjector(NextcloudTalkApplication::class)
 open class BaseActivity : AppCompatActivity() {
 
+    // TGM: always Vietnamese
+    override fun attachBaseContext(newBase: android.content.Context) {
+        super.attachBaseContext(com.nextcloud.talk.tgm.TgmLocale.wrap(newBase))
+    }
+
     enum class AppBarLayoutType {
         TOOLBAR,
         SEARCH_BAR,
