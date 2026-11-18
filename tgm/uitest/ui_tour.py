@@ -22,7 +22,10 @@ report = []
 
 
 def adb(*args, check=True):
-    return subprocess.run(["adb", *args], capture_output=True, text=True, check=check).stdout
+    r = subprocess.run(["adb", *args], capture_output=True, text=True)
+    if check and r.returncode != 0:
+        sys.exit(f"adb {args[:3]} failed ({r.returncode}): {r.stdout.strip()} {r.stderr.strip()}")
+    return r.stdout
 
 
 def shot(name):
@@ -68,7 +71,8 @@ def main():
     user, password = os.environ["TGM_TEST_USER"], os.environ["TGM_TEST_APP_PASSWORD"]
     q = urllib.parse.quote
     uri = f"nc://login/user:{q(user)}&password:{q(password)}&server:{q(SERVER)}"
-    adb("shell", "am", "start", "-n", f"{PKG}/com.nextcloud.talk.tgm.TgmTestLogin", "--es", "KEY_FROM_QR", uri)
+    adb("shell", "am", "start", "-n", f"{PKG}/com.nextcloud.talk.tgm.TgmTestLogin", "--es", "KEY_FROM_QR", f"'{uri}'")
+    # quoted: adb shell joins args into one device shell line, where "&" would split it
     t = wait_for(lambda: find("Tin nhắn") is not None, 120)
     report.append(f"login to conversation list: {t if t is None else round(t, 1)} s")
     time.sleep(3)
