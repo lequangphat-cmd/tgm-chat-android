@@ -36,7 +36,7 @@ enum class TgmTab(@StringRes val label: Int, val icon: ImageVector, val path: St
     CONTACTS(R.string.tgm_tab_contacts, Icons.Outlined.Contacts, "/apps/contacts/"),
     CALENDAR(R.string.tgm_tab_calendar, Icons.Outlined.CalendarMonth, "/apps/calendar/"),
     FILES(R.string.tgm_tab_files, Icons.Outlined.Folder, "/apps/files/"),
-    TASKS(R.string.tgm_tab_tasks, Icons.Outlined.TaskAlt, "/apps/deck/")
+    TASKS(R.string.tgm_tab_tasks, Icons.Outlined.TaskAlt, "/apps/tasks/")
 }
 
 @Composable
