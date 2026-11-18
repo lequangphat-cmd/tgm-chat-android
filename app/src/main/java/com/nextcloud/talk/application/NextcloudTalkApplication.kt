@@ -160,6 +160,10 @@ class NextcloudTalkApplication :
     override fun onCreate() {
         Log.d(TAG, "onCreate")
         sharedApplication = this
+        // TGM: the app is for Vietnamese staff, so it is always in Vietnamese, whatever the phone language
+        androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
+            androidx.core.os.LocaleListCompat.forLanguageTags("vi")
+        )
 
         // The crash-reporter process only needs to show ShowErrorActivity — skip all heavy
         // initialization (WebRTC, Room, Dagger) so the error screen can actually render.

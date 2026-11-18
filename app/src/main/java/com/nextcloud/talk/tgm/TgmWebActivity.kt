@@ -179,7 +179,7 @@ class TgmWebActivity : BaseActivity() {
 
     /** Loads the other web tabs in the background once the first one is ready. */
     private fun preloadOtherTabs() {
-        TgmTab.entries.filter { it.path != null && it != selectedTab }.forEach { tab ->
+        TgmTab.visible.filter { it.path != null && it != selectedTab }.forEach { tab ->
             val (view, isNew) = TgmWebPool.obtain(this, poolKey(tab)) { context -> newWebView(context) }
             if (isNew) {
                 attachClients(view)

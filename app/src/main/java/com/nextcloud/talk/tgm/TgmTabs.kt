@@ -31,19 +31,29 @@ import com.nextcloud.talk.data.user.model.User
  * the other tabs show the same web pages inside the app ([TgmWebActivity]), so their
  * data is always the same as on the web.
  */
-enum class TgmTab(@StringRes val label: Int, val icon: ImageVector, val path: String?) {
+enum class TgmTab(
+    @StringRes val label: Int,
+    val icon: ImageVector,
+    val path: String?,
+    val enabled: Boolean = true
+) {
     CHAT(R.string.tgm_tab_chat, Icons.AutoMirrored.Outlined.Chat, null),
     CONTACTS(R.string.tgm_tab_contacts, Icons.Outlined.Contacts, "/apps/contacts/"),
     CALENDAR(R.string.tgm_tab_calendar, Icons.Outlined.CalendarMonth, "/apps/calendar/"),
     FILES(R.string.tgm_tab_files, Icons.Outlined.Folder, "/apps/files/"),
-    TASKS(R.string.tgm_tab_tasks, Icons.Outlined.TaskAlt, "/apps/tasks/")
+    // Off while the server has neither Tasks nor Deck: the web menu hides "Nhiệm vụ" then too.
+    TASKS(R.string.tgm_tab_tasks, Icons.Outlined.TaskAlt, "/apps/tasks/", enabled = false);
+
+    companion object {
+        val visible: List<TgmTab> get() = entries.filter { it.enabled }
+    }
 }
 
 @Composable
 fun TgmBottomNav(selected: TgmTab, user: User?, onSelect: ((TgmTab) -> Unit)? = null) {
     val context = LocalContext.current
     NavigationBar {
-        TgmTab.entries.forEach { tab ->
+        TgmTab.visible.forEach { tab ->
             NavigationBarItem(
                 selected = tab == selected,
                 onClick = {
