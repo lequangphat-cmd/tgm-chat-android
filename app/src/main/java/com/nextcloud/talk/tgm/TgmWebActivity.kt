@@ -239,7 +239,7 @@ class TgmWebActivity : BaseActivity() {
                     // the "continue anyway" choice is stored now, go back to the page that was asked for
                     view.evaluateJavascript(SKIP_BROWSER_CHECK_JS, null)
                     val target = page.getQueryParameter("redirect_url")
-                        ?.let { runCatching { String(Base64.decode(it, Base64.DEFAULT)) }.getOrNull() }
+                        ?.let { runCatching { String(Base64.decode(it.replace(' ', '+'), Base64.DEFAULT)) }.getOrNull() }
                         ?.takeIf { it.startsWith("/") } ?: "/"
                     load(view, baseUrl + target)
                     return
