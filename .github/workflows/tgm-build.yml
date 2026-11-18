@@ -65,6 +65,8 @@ jobs:
           cp app/build/outputs/apk/gplay/debug/*.apk   "dist/tgm-chat-debug-$short.apk"
           cp app/build/outputs/apk/gplay/release/*.apk "dist/tgm-chat-release-$short.apk"
           cp app/build/outputs/bundle/gplayRelease/*.aab "dist/tgm-chat-release-$short.aab"
+          # fixed name, so testers can keep one download link
+          cp "dist/tgm-chat-release-$short.apk" dist/tgm-chat.apk
           ls -la dist
 
       - name: Publish to pre-release build-<branch>
