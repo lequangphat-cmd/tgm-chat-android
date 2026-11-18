@@ -66,15 +66,40 @@ def wait_for(pred, timeout=60):
     return None
 
 
+def check_credentials(user, password):
+    """HTTP status of the user endpoint with the test account, plus the login id the server returns."""
+    import base64
+    import json
+    import urllib.request
+    req = urllib.request.Request(
+        f"{SERVER}/ocs/v2.php/cloud/user?format=json",
+        headers={
+            "OCS-APIRequest": "true",
+            "Authorization": "Basic " + base64.b64encode(f"{user}:{password}".encode()).decode(),
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=20) as r:
+            data = json.load(r)["ocs"]["data"]
+            return f"HTTP {r.status}, id {data.get('id')}, admin={'admin' in data.get('groups', [])}"
+    except urllib.error.HTTPError as e:
+        return f"HTTP {e.code} (user name or app password not accepted)"
+    except Exception as e:  # noqa: BLE001
+        return f"failed: {type(e).__name__}"
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     user, password = os.environ["TGM_TEST_USER"], os.environ["TGM_TEST_APP_PASSWORD"]
     q = urllib.parse.quote
+    report.append("credential check: " + check_credentials(user, password))
     uri = f"nc://login/user:{q(user)}&password:{q(password)}&server:{q(SERVER)}"
     adb("shell", "am", "start", "-n", f"{PKG}/com.nextcloud.talk.tgm.TgmTestLogin", "--es", "KEY_FROM_QR", f"'{uri}'")
     # quoted: adb shell joins args into one device shell line, where "&" would split it
     time.sleep(8)
-    shot("sau-dang-nhap")
+    shot("dang-xac-minh")
+    time.sleep(3)
+    shot("sau-xac-minh")
     t = wait_for(lambda: find("Tin nhắn") is not None, 120)
     report.append(f"login to conversation list: {t if t is None else round(t, 1)} s")
     if t is None:
