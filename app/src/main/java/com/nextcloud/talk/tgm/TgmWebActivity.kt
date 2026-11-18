@@ -147,7 +147,7 @@ class TgmWebActivity : BaseActivity() {
         }
         if (tab == selectedTab && webView != null) {
             // same tab tapped again: back to the start page of the tab
-            webView?.loadUrl(baseUrl + tab.path, mapOf("Authorization" to authHeader))
+            webView?.let { load(it, baseUrl + tab.path) }
             return
         }
         selectedTab = tab
@@ -171,7 +171,7 @@ class TgmWebActivity : BaseActivity() {
         firstLoad = isNew || view.progress < FULL_PROGRESS
         if (isNew) {
             loading = true
-            view.loadUrl(baseUrl + (tab.path ?: "/"), mapOf("Authorization" to authHeader))
+            load(view, baseUrl + (tab.path ?: "/"))
         } else {
             loading = view.progress < FULL_PROGRESS
         }
@@ -183,8 +183,21 @@ class TgmWebActivity : BaseActivity() {
             val (view, isNew) = TgmWebPool.obtain(this, poolKey(tab)) { context -> newWebView(context) }
             if (isNew) {
                 attachClients(view)
-                view.loadUrl(baseUrl + tab.path, mapOf("Authorization" to authHeader))
+                load(view, baseUrl + tab.path)
             }
+        }
+    }
+
+    /**
+     * TGM: only the first page logs in with the app password. Nextcloud starts a new session on
+     * every basic-auth login, so sending the header from several tabs at once logged the others out
+     * (stuck "Đang tải danh bạ", Tệp tin showing the login page). Later pages share the cookie.
+     */
+    private fun load(view: WebView, url: String) {
+        if (TgmWebPool.sessionReady) {
+            view.loadUrl(url)
+        } else {
+            view.loadUrl(url, mapOf("Authorization" to authHeader))
         }
     }
 
@@ -202,6 +215,7 @@ class TgmWebActivity : BaseActivity() {
         // hide the web menu before the first paint, so the web bottom bar never flashes over the app's
         if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
             WebViewCompat.addDocumentStartJavaScript(view, HIDE_WEB_SHELL_JS, setOf("*"))
+            WebViewCompat.addDocumentStartJavaScript(view, SKIP_BROWSER_CHECK_JS, setOf("*"))
         }
         return view
     }
@@ -219,10 +233,23 @@ class TgmWebActivity : BaseActivity() {
 
             override fun onPageFinished(view: WebView, url: String?) {
                 view.evaluateJavascript(HIDE_WEB_SHELL_JS, null)
+                val page = url?.toUri()
+                val onLoginPage = page?.path?.removePrefix("/index.php")?.startsWith("/login") == true
+                if (onLoginPage && view.tag != LOGIN_RETRIED) {
+                    // the session ran out: log in again with the app password, once
+                    view.tag = LOGIN_RETRIED
+                    TgmWebPool.sessionReady = false
+                    load(view, baseUrl + (page?.getQueryParameter("redirect_url") ?: "/"))
+                    return
+                }
+                if (!onLoginPage && url?.startsWith(baseUrl) == true) {
+                    view.tag = null
+                    TgmWebPool.sessionReady = true
+                }
                 if (view === webView) {
                     loading = false
                     firstLoad = false
-                    if (!preloaded) {
+                    if (!preloaded && TgmWebPool.sessionReady) {
                         preloaded = true
                         preloadOtherTabs()
                     }
@@ -306,6 +333,20 @@ class TgmWebActivity : BaseActivity() {
 
         private const val FULL_PROGRESS = 100
 
+        private const val LOGIN_RETRIED = "tgm-login-retried"
+
+        /**
+         * Nextcloud sends older Android WebViews to an "unsupported browser" page (seen on Lịch).
+         * The app's WebView is good enough, so store the "continue anyway" choice before the page runs.
+         */
+        private const val SKIP_BROWSER_CHECK_JS = """
+            try {
+              // @nextcloud/browser-storage key: persistent scope "core" (base64), see
+              // core/src/utils/RedirectUnsupportedBrowsers.js
+              localStorage.setItem('nextcloud_per_' + btoa('core') + '_unsupported-browser-ignore', 'true');
+            } catch (e) {}
+        """
+
         private val CALL_LINK = Regex("""^/call/([A-Za-z0-9]+)""")
 
         /** Hides the web menu, header and bottom bar: the app draws its own navigation. */
@@ -341,6 +382,9 @@ class TgmWebActivity : BaseActivity() {
 object TgmWebPool {
     private val views = HashMap<String, WebView>()
 
+    /** True once a web page loaded with a logged-in session cookie. */
+    var sessionReady = false
+
     /** Returns the WebView for [key] (bound to [activity]) and whether it was just created. */
     fun obtain(activity: Context, key: String, create: (Context) -> WebView): Pair<WebView, Boolean> {
         views[key]?.let { view ->
@@ -364,5 +408,6 @@ object TgmWebPool {
     fun clear() {
         views.values.forEach { it.destroy() }
         views.clear()
+        sessionReady = false
     }
 }
