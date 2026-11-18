@@ -42,8 +42,7 @@ enum class TgmTab(
 ) {
     CHAT(R.string.tgm_tab_chat, Icons.AutoMirrored.Outlined.Chat, null),
     CONTACTS(R.string.tgm_tab_contacts, Icons.Outlined.Contacts, "/apps/contacts/"),
-    // Off (Phát 18/11): only contract features in the app; Lịch is not in the contract.
-    CALENDAR(R.string.tgm_tab_calendar, Icons.Outlined.CalendarMonth, "/apps/calendar/", enabled = false),
+    CALENDAR(R.string.tgm_tab_calendar, Icons.Outlined.CalendarMonth, "/apps/calendar/"),
     FILES(R.string.tgm_tab_files, Icons.Outlined.Folder, "/apps/files/"),
     // Off while the server has neither Tasks nor Deck: the web menu hides "Nhiệm vụ" then too.
     TASKS(R.string.tgm_tab_tasks, Icons.Outlined.TaskAlt, "/apps/tasks/", enabled = false),
