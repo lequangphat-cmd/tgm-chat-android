@@ -339,7 +339,8 @@ fun ConversationsListScreen(
                                     onScrollChanged = callbacks.onScrollChanged,
                                     onScrollStopped = callbacks.onScrollStopped,
                                     listState = lazyListState,
-                                    contentBottomPadding = paddingValues.calculateBottomPadding(),
+                                    // TGM: room under the new-conversation button for the last item
+                                    contentBottomPadding = paddingValues.calculateBottomPadding() + TGM_FAB_CLEARANCE,
                                     onSwipeConversation = callbacks.onConversationOpsAction,
                                     isOnline = isOnline,
                                     tagsRowContent = if (showConversationTagsRow) {
@@ -693,3 +694,5 @@ private fun ConversationsListScreenDarkPreview() {
         ConversationsListScreenPreviewContent(showThreadsButton = !isSystemInDarkTheme())
     }
 }
+
+private val TGM_FAB_CLEARANCE = 80.dp
