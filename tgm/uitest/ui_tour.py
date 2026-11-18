@@ -165,6 +165,17 @@ def main():
         time.sleep(4)
         shot("cai-dat")
         adb("shell", "input", "keyevent", "KEYCODE_BACK")
+    # second look at Danh bạ after a long wait: is it slow or stuck?
+    n = find("Danh bạ")
+    if n is not None:
+        tap(n)
+        time.sleep(30)
+        shot("Danh-bạ-sau-30s")
+        report.append(f"Danh bạ after 30 s: {len(web_texts())} web texts")
+    # web page console output (errors from Contacts, Files, Calendar)
+    log = adb("logcat", "-d", "-v", "time", "-s", "chromium:*", "Console:*", "TgmWeb:*", check=False)
+    with open(os.path.join(OUT, "web-console.txt"), "w") as f:
+        f.write(log)
     crash = adb("logcat", "-d", "-b", "crash", check=False)
     report.append("crash log: " + ("none" if PKG not in crash else "FOUND"))
     with open(os.path.join(OUT, "report.txt"), "w") as f:
