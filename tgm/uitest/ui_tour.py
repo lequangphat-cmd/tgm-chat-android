@@ -57,6 +57,19 @@ def tap(node):
     adb("shell", "input", "tap", str((x1 + x2) // 2), str((y1 + y2) // 2))
 
 
+POPUPS = ("Wait", "Bỏ qua", "Để sau", "Allow", "Cho phép", "Dismiss")
+
+
+def dismiss_popups():
+    """Tap away system ANR dialogs and first-run prompts that cover the app."""
+    for n in nodes():
+        if (n.get("text") or "") in POPUPS:
+            tap(n)
+            time.sleep(1)
+            return True
+    return False
+
+
 def wait_for(pred, timeout=60):
     start = time.time()
     while time.time() - start < timeout:
@@ -90,6 +103,8 @@ def check_credentials(user, password):
 
 def main():
     os.makedirs(OUT, exist_ok=True)
+    # the CI emulator is slow; keep "app isn't responding" dialogs from covering the screen
+    adb("shell", "settings", "put", "global", "hide_error_dialogs", "1", check=False)
     user, password = os.environ["TGM_TEST_USER"].strip(), os.environ["TGM_TEST_APP_PASSWORD"].strip()
     q = urllib.parse.quote
     report.append("credential check: " + check_credentials(user, password))
@@ -100,7 +115,7 @@ def main():
     shot("dang-xac-minh")
     time.sleep(3)
     shot("sau-xac-minh")
-    t = wait_for(lambda: find("Tin nhắn") is not None, 120)
+    t = wait_for(lambda: (dismiss_popups() and False) or find("Tin nhắn") is not None, 180)
     report.append(f"login to conversation list: {t if t is None else round(t, 1)} s")
     if t is None:
         # keep the app log for diagnosis, with the secrets masked
@@ -112,17 +127,15 @@ def main():
             f.write("\n".join(keep[-1500:]) + "\n")
     time.sleep(3)
     # dismiss permission dialogs if any
-    for label in ("Wait", "Allow", "Cho phép", "Dismiss", "Để sau"):
-        n = find(label)
-        if n is not None:
-            tap(n)
-            time.sleep(1)
+    while dismiss_popups():
+        pass
     shot("tin-nhan")
     for tab in TABS:
         n = find(tab)
         if n is None:
             report.append(f"{tab}: tab not found")
             continue
+        dismiss_popups()
         tap(n)
         # content shown = web view has some text nodes or the list is back
         t = wait_for(lambda: len([x for x in nodes() if x.get("text")]) > 8, 60)
