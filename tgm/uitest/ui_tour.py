@@ -70,6 +70,23 @@ def dismiss_popups():
     return False
 
 
+NAV_LABELS = {"Tin nhắn", "Danh bạ", "Lịch", "Tệp tin", "Cài đặt"}
+
+
+def web_texts():
+    """Texts shown by the web page (inside a WebView), not the app's own bottom bar."""
+    out, stack = [], []
+    for n in nodes():
+        if n.get("class") == "android.webkit.WebView":
+            stack = list(n.iter("node"))
+            break
+    for n in stack:
+        t = (n.get("text") or n.get("content-desc") or "").strip()
+        if t and t not in NAV_LABELS:
+            out.append(t)
+    return out
+
+
 def wait_for(pred, timeout=60):
     start = time.time()
     while time.time() - start < timeout:
@@ -138,7 +155,7 @@ def main():
         dismiss_popups()
         tap(n)
         # content shown = web view has some text nodes or the list is back
-        t = wait_for(lambda: len([x for x in nodes() if x.get("text")]) > 8, 60)
+        t = wait_for(lambda: len(web_texts()) > 3, 90)
         report.append(f"{tab}: {t if t is None else round(t, 1)} s")
         time.sleep(2)
         shot(tab.replace(" ", "-"))

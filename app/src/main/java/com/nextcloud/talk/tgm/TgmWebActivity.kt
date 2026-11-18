@@ -228,12 +228,22 @@ class TgmWebActivity : BaseActivity() {
 
             override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
                 if (view === webView) loading = true
+                view.evaluateJavascript(SKIP_BROWSER_CHECK_JS, null)
                 view.evaluateJavascript(HIDE_WEB_SHELL_JS, null)
             }
 
             override fun onPageFinished(view: WebView, url: String?) {
                 view.evaluateJavascript(HIDE_WEB_SHELL_JS, null)
                 val page = url?.toUri()
+                if (page?.path?.removePrefix("/index.php")?.startsWith("/unsupported") == true) {
+                    // the "continue anyway" choice is stored now, go back to the page that was asked for
+                    view.evaluateJavascript(SKIP_BROWSER_CHECK_JS, null)
+                    val target = page.getQueryParameter("redirect_url")
+                        ?.let { runCatching { String(Base64.decode(it, Base64.DEFAULT)) }.getOrNull() }
+                        ?.takeIf { it.startsWith("/") } ?: "/"
+                    load(view, baseUrl + target)
+                    return
+                }
                 val onLoginPage = page?.path?.removePrefix("/index.php")?.startsWith("/login") == true
                 if (onLoginPage && view.tag != LOGIN_RETRIED) {
                     // the session ran out: log in again with the app password, once
