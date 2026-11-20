@@ -237,6 +237,7 @@ class TgmWebActivity : BaseActivity() {
 
             override fun onPageFinished(view: WebView, url: String?) {
                 view.evaluateJavascript(HIDE_WEB_SHELL_JS, null)
+                view.evaluateJavascript(CALENDAR_BAR_JS, null)
                 val page = url?.toUri()
                 if (page?.path?.removePrefix("/index.php")?.startsWith("/unsupported") == true) {
                     // the "continue anyway" choice is stored now, go back to the page that was asked for
@@ -360,6 +361,40 @@ class TgmWebActivity : BaseActivity() {
          * Nextcloud sends older Android WebViews to an "unsupported browser" page (seen on Lịch).
          * The app's WebView is good enough, so store the "continue anyway" choice before the page runs.
          */
+        /**
+         * Calendar keeps its month title and arrows in the side menu, hidden on a phone. This adds a
+         * small bar on top (previous, month, next, Hôm nay) that presses Calendar's own buttons.
+         */
+        private const val CALENDAR_BAR_JS = """
+            (function () {
+              if (location.pathname.indexOf('/apps/calendar') < 0 || document.getElementById('tgm-cal-bar')) return;
+              var css = document.createElement('style');
+              css.textContent =
+                '#tgm-cal-bar{position:fixed;top:4px;left:52px;right:8px;height:42px;z-index:2000;display:flex;' +
+                'align-items:center;gap:4px;font:600 16px system-ui,sans-serif;color:#3a2712}' +
+                '#tgm-cal-bar button{border:0;background:#fff7e0;border-radius:21px;height:38px;min-width:38px;' +
+                'font:inherit;color:inherit;padding:0 12px}' +
+                '#tgm-cal-bar .t{flex:1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}';
+              document.head.appendChild(css);
+              var bar = document.createElement('div');
+              bar.id = 'tgm-cal-bar';
+              bar.innerHTML = '<button class="p" aria-label="Trước">&#8249;</button><span class="t"></span>' +
+                '<button class="n" aria-label="Sau">&#8250;</button><button class="d">Hôm nay</button>';
+              document.body.appendChild(bar);
+              function press(sel) { var b = document.querySelector(sel); if (b) b.click(); }
+              bar.querySelector('.p').onclick = function () { press('.datepicker-button-section__left'); };
+              bar.querySelector('.n').onclick = function () { press('.datepicker-button-section__right'); };
+              bar.querySelector('.d').onclick = function () { press('.app-navigation-header .today'); };
+              function title() {
+                var m = location.pathname.match(/\/(\d{4})-(\d{2})-(\d{2})/);
+                var d = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date();
+                bar.querySelector('.t').textContent = 'Tháng ' + (d.getMonth() + 1) + ', ' + d.getFullYear();
+              }
+              title();
+              setInterval(title, 500);
+            })();
+        """
+
         private const val SKIP_BROWSER_CHECK_JS = """
             try {
               // @nextcloud/browser-storage key: persistent scope "core" (base64), see
