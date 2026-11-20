@@ -159,6 +159,17 @@ def main():
         report.append(f"{tab}: {t if t is None else round(t, 1)} s")
         time.sleep(2)
         shot(tab.replace(" ", "-"))
+    # Lịch: the app's month bar, press "next"
+    n = find("Lịch")
+    if n is not None:
+        tap(n)
+        time.sleep(2)
+        nxt = find("Sau")
+        report.append("Lịch month bar: " + ("found" if nxt is not None else "NOT FOUND"))
+        if nxt is not None:
+            tap(nxt)
+            time.sleep(4)
+            shot("Lịch-thang-sau")
     n = find("Cài đặt")
     if n is not None:
         tap(n)
