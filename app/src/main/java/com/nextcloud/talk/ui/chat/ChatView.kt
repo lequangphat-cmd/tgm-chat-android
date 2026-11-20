@@ -53,6 +53,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
@@ -85,7 +86,7 @@ import java.time.ZoneId
 
 private const val LONG_1000 = 1000L
 private const val LOAD_MORE_BUFFER_ITEMS = 5
-private const val STICKY_HEADER_HIDE_DELAY_MILLIS = 1200L
+private const val STICKY_HEADER_HIDE_DELAY_MILLIS = 700L // TGM: was 1200, hide sooner so it covers names less
 private const val UNREAD_MARKER_LAYOUT_TIMEOUT_MS = 500L
 private const val PREVIEW_SAMPLE_CHAT_COUNT = 50
 private const val PREVIEW_UNREAD_MARKER_OFFSET = 15
@@ -491,12 +492,15 @@ fun ChatView(
         }
 
         // Sticky date header
+        // TGM: small raised pill (shadow) so it reads as floating over a sender name, not mixed into it
         DateHeaderLabel(
             text = stickyDateHeaderText,
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(top = state.stickyHeaderTopOffset + 2.dp)
+                .padding(top = state.stickyHeaderTopOffset + 6.dp)
                 .alpha(stickyDateHeaderAlpha)
+                .shadow(3.dp, RoundedCornerShape(12.dp)),
+            small = true
         )
 
         // Unread messages popup
@@ -568,13 +572,13 @@ fun UnreadMessagesPopup(unreadCount: Int, onClick: () -> Unit, modifier: Modifie
 }
 
 @Composable
-fun DateHeaderLabel(text: String, modifier: Modifier = Modifier) {
+fun DateHeaderLabel(text: String, modifier: Modifier = Modifier, small: Boolean = false) {
     Text(
         text = text,
         modifier = modifier
             .background(MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(12.dp))
-            .padding(horizontal = 12.dp, vertical = 4.dp),
-        style = MaterialTheme.typography.bodyMedium,
+            .padding(horizontal = 12.dp, vertical = if (small) 2.dp else 4.dp),
+        style = if (small) MaterialTheme.typography.labelMedium else MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurface
     )
 }

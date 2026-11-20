@@ -26,6 +26,7 @@ for TGM, locked to `https://chat.tgmdental.net`.
 | App always in Vietnamese (`tgm/TgmLocale.kt`, `attachBaseContext` override) | `application/NextcloudTalkApplication.kt`, `activities/BaseActivity.kt`, the four activities that extend `AppCompatActivity` directly |
 | Bottom tabs per contract (Phát 18/11): Tin nhắn, Danh bạ, Lịch, Tệp tin, Cài đặt (native settings); Nhiệm vụ off via `TgmTab.enabled` | `tgm/TgmTabs.kt`, `res/values*/tgm_strings.xml` |
 | CI UI tour on an emulator (test account from secrets `TGM_TEST_USER`, `TGM_TEST_APP_PASSWORD`; debug-only exported login alias) | `.github/workflows/tgm-ui-test.yml`, `tgm/uitest/ui_tour.py`, `app/src/debug/AndroidManifest.xml` |
+| Chat floating date: smaller raised pill, hides after 0.7 s (was 1.2 s) so it covers sender names less | `ui/chat/ChatView.kt` |
 | CI build, publish to pre-release `build-<branch>` | `.github/workflows/tgm-build.yml` (upstream workflows removed) |
 | Firebase values from secret | `tgm/apply-firebase.py` |
 
