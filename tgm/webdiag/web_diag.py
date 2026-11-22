@@ -4,6 +4,7 @@ display size) with the app's injected scripts, then save screenshots and layout 
 Env: TGM_TEST_USER, TGM_TEST_APP_PASSWORD, TGM_SERVER, TGM_VIEW_W (320), TGM_VIEW_H (524),
 TGM_OUT (web-diag).
 """
+import base64
 import json
 import os
 import re
@@ -66,11 +67,16 @@ def main():
             locale="vi-VN", timezone_id="Asia/Ho_Chi_Minh",
             user_agent="Mozilla/5.0 (Linux; Android 9; SM-N950F) AppleWebKit/537.36 (KHTML, like Gecko) "
                        "Chrome/101.0.4951.61 Mobile Safari/537.36",
-            http_credentials={"username": USER, "password": PASSWORD},
         )
         for s in SCRIPTS:
             ctx.add_init_script(s)
         page = ctx.new_page()
+        # like the app: only the first page sends basic auth, later ones ride on the session cookie
+        auth = base64.b64encode(f"{USER}:{PASSWORD}".encode()).decode()
+        page.set_extra_http_headers({"Authorization": "Basic " + auth})
+        page.goto(SERVER + "/apps/dashboard/", wait_until="domcontentloaded", timeout=90000)
+        page.set_extra_http_headers({})
+        report["first_page"] = page.url
         timings = []
         page.on("requestfinished", lambda r: timings.append(
             (r.url[:160], round(r.timing["responseEnd"]), r.timing["startTime"])))
