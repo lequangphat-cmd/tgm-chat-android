@@ -62,6 +62,7 @@ def main():
     report = {"viewport": [W, H]}
     with sync_playwright() as p:
         browser = p.chromium.launch()
+        report["chromium"] = browser.version
         ctx = browser.new_context(
             viewport={"width": W, "height": H}, device_scale_factor=3.375, is_mobile=True, has_touch=True,
             locale="vi-VN", timezone_id="Asia/Ho_Chi_Minh",
@@ -101,10 +102,16 @@ def main():
                 r["bar"] = page.evaluate(BAR)
                 pts = [[x, y] for x in (4, 10, 16, 30) for y in (40, 46, 55, 65)] + [[160, 120], [160, 160]]
                 r["points"] = page.evaluate(DESCRIBE, pts)
+                r["stack"] = page.evaluate("""() => [...document.querySelectorAll('body *')].filter(e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.left <= 5 && r.right >= 5 && r.top <= 60 && r.bottom >= 60; })
+                  .map(e => { const r = e.getBoundingClientRect(), cs = getComputedStyle(e); return [e.tagName.toLowerCase() + '#' + e.id + '.' + (typeof e.className === 'string' ? e.className : ''), [r.left, r.top, r.width, r.height].map(Math.round), cs.position, cs.zIndex, cs.backgroundColor, cs.pointerEvents, e.textContent.trim().slice(0, 30)]; })""")
+                r["rows"] = page.evaluate("""() => { const f = document.querySelector('.fc-daygrid-day-frame'), td = f && f.parentElement, t = document.querySelector('.fc-daygrid-body table');
+                  return f && {frameMinH: getComputedStyle(f).minHeight, frameH: f.getBoundingClientRect().height, tdStyle: td.getAttribute('style'), tableStyle: t && t.getAttribute('style'), bodyStyle: document.querySelector('.fc-daygrid-body').getAttribute('style'), rows: document.querySelectorAll('.fc-daygrid-body tr').length,
+                    eventsH: [...f.children].map(c => c.className + ':' + Math.round(c.getBoundingClientRect().height) + ':' + getComputedStyle(c).minHeight)}; }""")
                 r["fc"] = page.evaluate("""() => ['.fc-scrollgrid', '.fc-col-header', '.fc-daygrid-body', '.fc-scroller', '.fc-view-harness', '.app-content', '#app-navigation-vue', '.app-navigation-toggle', '.new-event']
                   .map(s => { const e = document.querySelector(s); if (!e) return [s, null]; const r = e.getBoundingClientRect(); return [s, [r.left, r.top, r.width, r.height].map(Math.round), getComputedStyle(e).height]; })""")
             if name == "contacts":
-                r["inputs"] = page.evaluate(SEARCH)
+                r["inputs"] = page.evaluate(SEARCH)[-2:]
+                r["header"] = page.evaluate("""() => { const h = document.querySelector('.contacts-list__header'); if (!h) return null; return [...h.querySelectorAll('*')].slice(0, 25).map(e => { const r = e.getBoundingClientRect(), cs = getComputedStyle(e); return [e.tagName.toLowerCase() + '.' + (typeof e.className === 'string' ? e.className : ''), [r.left, r.top, r.width, r.height].map(Math.round), cs.display, cs.position, cs.height, cs.border]; }); }""")
                 r["points"] = page.evaluate(DESCRIBE, [[60, 10], [60, 20], [20, 30], [160, 10]])
             report[name] = r
         browser.close()
