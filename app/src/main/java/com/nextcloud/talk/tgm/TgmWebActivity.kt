@@ -389,8 +389,9 @@ class TgmWebActivity : BaseActivity() {
               css.textContent =
                 '#tgm-cal-bar{position:fixed;top:4px;left:50px;right:6px;height:42px;z-index:2000;display:flex;' +
                 'align-items:center;gap:2px;font:600 15px system-ui,sans-serif;color:#3a2712}' +
-                '#tgm-cal-bar button{border:0;background:#fff7e0;border-radius:19px;height:36px;min-width:34px;' +
-                'font:inherit;color:inherit;padding:0 8px;flex:none}' +
+                '#tgm-cal-bar button{border:0;background:#fff7e0;border-radius:19px;height:36px;min-width:32px;' +
+                'font:inherit;color:inherit;padding:0 6px;flex:none}' +
+                '#tgm-cal-bar .d{font-size:13px;padding:0 9px}' +
                 '#tgm-cal-bar .t{flex:1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}';
               document.head.appendChild(css);
               var bar = document.createElement('div');
@@ -405,7 +406,13 @@ class TgmWebActivity : BaseActivity() {
               function title() {
                 var m = location.pathname.match(/\/(\d{4})-(\d{2})-(\d{2})/);
                 var d = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date();
-                bar.querySelector('.t').textContent = 'Tháng ' + (d.getMonth() + 1) + ', ' + d.getFullYear();
+                var t = bar.querySelector('.t'), month = d.getMonth() + 1, year = d.getFullYear();
+                // narrow screens (large display size): fall back to shorter titles instead of cutting the year
+                var names = ['Tháng ' + month + ', ' + year, 'Tháng ' + month + '/' + year, month + '/' + year];
+                for (var i = 0; i < names.length; i++) {
+                  if (t.textContent !== names[i]) t.textContent = names[i];
+                  if (t.scrollWidth <= t.clientWidth) break;
+                }
               }
               title();
               setInterval(title, 500);
@@ -434,7 +441,12 @@ class TgmWebActivity : BaseActivity() {
                 ' --tgm-bottom-nav-height: 0px !important; }' +
                 'body { padding-left: 0 !important; padding-bottom: 0 !important; }' +
                 '#content.app-calendar .app-content { padding-top: 50px !important;' +
-                ' box-sizing: border-box !important; }';
+                ' box-sizing: border-box !important; }' +
+                // the closed side menu still shows Calendar's "next month" button at the left edge
+                '#content.app-calendar .app-navigation--closed .app-navigation__content { visibility: hidden !important; }' +
+                // Calendar gives each day at least 150px, so a month does not fit a phone and the grid
+                // scrolls to today, hiding the first weeks: let the six weeks share the height instead
+                '#content.app-calendar .fc-daygrid-day-frame { min-height: 0 !important; }';
               (document.head || document.documentElement).appendChild(style);
             })();
         """
