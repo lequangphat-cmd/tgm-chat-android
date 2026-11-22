@@ -1,0 +1,39 @@
+# TGM: render the web tabs (Tệp tin, Lịch, Danh bạ) at a small phone's CSS size with the app's
+# injected scripts and upload screenshots plus a layout report as the artifact "web-diag".
+name: TGM web diag
+
+on:
+  workflow_dispatch:
+    inputs:
+      width:
+        description: CSS viewport width
+        default: "320"
+      height:
+        description: CSS viewport height
+        default: "524"
+
+permissions:
+  contents: read
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install playwright==1.48.0 && python -m playwright install --with-deps chromium
+      - name: Render web tabs
+        env:
+          TGM_TEST_USER: ${{ secrets.TGM_TEST_USER }}
+          TGM_TEST_APP_PASSWORD: ${{ secrets.TGM_TEST_APP_PASSWORD }}
+          TGM_VIEW_W: ${{ inputs.width }}
+          TGM_VIEW_H: ${{ inputs.height }}
+        run: python tgm/webdiag/web_diag.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: web-diag
+          path: web-diag/
