@@ -880,8 +880,14 @@ class NotificationWorker(context: Context, workerParams: WorkerParameters) : Wor
 
         val sender = personBuilder.build()
         val newStyle = NotificationCompat.MessagingStyle(deviceUser)
-        newStyle.conversationTitle = pushMessage.subject.ifEmpty { sender.name }
         newStyle.isGroupConversation = "one2one" != conversationType
+        // TGM: in a 1-1 chat the subject is the sender's name, a title showed it twice
+        // ("GĐ. Minh Hương: GĐ. Minh Hương"); only group chats get a title
+        newStyle.conversationTitle = if (newStyle.isGroupConversation) {
+            pushMessage.subject.ifEmpty { sender.name }
+        } else {
+            null
+        }
         style?.messages?.forEach { message ->
             newStyle.addMessage(
                 NotificationCompat.MessagingStyle.Message(
