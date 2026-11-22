@@ -49,6 +49,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
+import androidx.webkit.WebSettingsCompat
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import autodagger.AutoInjector
@@ -174,7 +175,16 @@ class TgmWebActivity : BaseActivity() {
         firstLoad = isNew || view.progress < FULL_PROGRESS
         if (isNew) {
             loading = true
-            load(view, baseUrl + (tab.path ?: "/"))
+            val url = baseUrl + (tab.path ?: "/")
+            if (!TgmWebPool.cookiesReset) {
+                // TGM: drop the web session left by the login page, it can expire a few seconds later
+                // and bounce a tab to /login (seen on Tệp tin, Note8). The first page logs in fresh.
+                TgmWebPool.cookiesReset = true
+                TgmWebPool.sessionReady = false
+                CookieManager.getInstance().removeAllCookies { load(view, url) }
+            } else {
+                load(view, url)
+            }
         } else {
             loading = view.progress < FULL_PROGRESS
         }
@@ -213,6 +223,12 @@ class TgmWebActivity : BaseActivity() {
         view.settings.javaScriptEnabled = true
         view.settings.domStorageEnabled = true
         view.settings.offscreenPreRaster = true
+        // TGM: large system fonts broke the web layouts (Lịch title cut to "Tháng …"); cap the zoom
+        view.settings.textZoom = minOf(view.settings.textZoom, MAX_TEXT_ZOOM)
+        // TGM: follow the phone's dark mode like the native screens
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING)) {
+            WebSettingsCompat.setAlgorithmicDarkeningAllowed(view.settings, true)
+        }
         view.settings.userAgentString = view.settings.userAgentString + " TGMChatApp"
         CookieManager.getInstance().setAcceptThirdPartyCookies(view, true)
         // hide the web menu before the first paint, so the web bottom bar never flashes over the app's
@@ -356,6 +372,7 @@ class TgmWebActivity : BaseActivity() {
         private const val FULL_PROGRESS = 100
 
         private const val LOGIN_RETRIED = "tgm-login-retried"
+        private const val MAX_TEXT_ZOOM = 115
 
         /**
          * Nextcloud sends older Android WebViews to an "unsupported browser" page (seen on Lịch).
@@ -370,10 +387,10 @@ class TgmWebActivity : BaseActivity() {
               if (location.pathname.indexOf('/apps/calendar') < 0 || document.getElementById('tgm-cal-bar')) return;
               var css = document.createElement('style');
               css.textContent =
-                '#tgm-cal-bar{position:fixed;top:4px;left:52px;right:8px;height:42px;z-index:2000;display:flex;' +
-                'align-items:center;gap:4px;font:600 16px system-ui,sans-serif;color:#3a2712}' +
-                '#tgm-cal-bar button{border:0;background:#fff7e0;border-radius:21px;height:38px;min-width:38px;' +
-                'font:inherit;color:inherit;padding:0 12px}' +
+                '#tgm-cal-bar{position:fixed;top:4px;left:50px;right:6px;height:42px;z-index:2000;display:flex;' +
+                'align-items:center;gap:2px;font:600 15px system-ui,sans-serif;color:#3a2712}' +
+                '#tgm-cal-bar button{border:0;background:#fff7e0;border-radius:19px;height:36px;min-width:34px;' +
+                'font:inherit;color:inherit;padding:0 8px;flex:none}' +
                 '#tgm-cal-bar .t{flex:1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}';
               document.head.appendChild(css);
               var bar = document.createElement('div');
@@ -441,6 +458,9 @@ object TgmWebPool {
     /** True once a web page loaded with a logged-in session cookie. */
     var sessionReady = false
 
+    /** Old web cookies are dropped once per app start, before the first web page. */
+    var cookiesReset = false
+
     /** Returns the WebView for [key] (bound to [activity]) and whether it was just created. */
     fun obtain(activity: Context, key: String, create: (Context) -> WebView): Pair<WebView, Boolean> {
         views[key]?.let { view ->
@@ -465,5 +485,6 @@ object TgmWebPool {
         views.values.forEach { it.destroy() }
         views.clear()
         sessionReady = false
+        cookiesReset = false
     }
 }

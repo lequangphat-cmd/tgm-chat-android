@@ -183,6 +183,16 @@ def main():
         time.sleep(30)
         shot("Danh-bạ-sau-30s")
         report.append(f"Danh bạ after 30 s: {len(web_texts())} web texts")
+    # dark mode: web tabs should follow the phone
+    adb("shell", "cmd", "uimode", "night", "yes", check=False)
+    time.sleep(4)
+    for tab in ("Tệp tin", "Lịch"):
+        n = find(tab)
+        if n is not None:
+            tap(n)
+            time.sleep(5)
+            shot(f"toi-{tab.replace(' ', '-')}")
+    adb("shell", "cmd", "uimode", "night", "no", check=False)
     # web page console output (errors from Contacts, Files, Calendar)
     log = adb("logcat", "-d", "-v", "time", "-s", "chromium:*", "Console:*", "TgmWeb:*", check=False)
     with open(os.path.join(OUT, "web-console.txt"), "w") as f:
