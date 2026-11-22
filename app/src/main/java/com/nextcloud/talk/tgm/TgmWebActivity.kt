@@ -21,6 +21,7 @@ import android.os.Environment
 import android.util.Base64
 import android.util.Log
 import android.webkit.ConsoleMessage
+import android.webkit.JavascriptInterface
 import android.webkit.CookieManager
 import android.webkit.URLUtil
 import android.webkit.ValueCallback
@@ -222,6 +223,7 @@ class TgmWebActivity : BaseActivity() {
      * Android 9) cannot darken pages at all, so the theme stylesheet is what makes them dark there.
      */
     private fun applyDarkMode(view: WebView) {
+        view.setBackgroundColor(if (nightMode) DARK_BACKGROUND else android.graphics.Color.WHITE)
         if (WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING)) {
             WebSettingsCompat.setAlgorithmicDarkeningAllowed(view.settings, true)
         }
@@ -254,8 +256,11 @@ class TgmWebActivity : BaseActivity() {
         view.settings.textZoom = minOf(view.settings.textZoom, MAX_TEXT_ZOOM)
         view.settings.userAgentString = view.settings.userAgentString + " TGMChatApp"
         CookieManager.getInstance().setAcceptThirdPartyCookies(view, true)
+        view.addJavascriptInterface(NightBridge(view), "TgmApp")
         // hide the web menu before the first paint, so the web bottom bar never flashes over the app's
         if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            // dark pages from the first paint, no light flash before onPageFinished (Danh bạ, Note8)
+            WebViewCompat.addDocumentStartJavaScript(view, EARLY_DARK_JS, setOf("*"))
             WebViewCompat.addDocumentStartJavaScript(view, HIDE_WEB_SHELL_JS, setOf("*"))
             WebViewCompat.addDocumentStartJavaScript(view, SKIP_BROWSER_CHECK_JS, setOf("*"))
         }
@@ -474,10 +479,18 @@ class TgmWebActivity : BaseActivity() {
         """
 
         /** Nextcloud's dark theme variables, applied whatever the page's own theme choice is. */
+        private const val DARK_BACKGROUND = 0xFF171717.toInt()
+
         private const val DARK_THEME_JS = """
-            (function () {
+            (function tgmDark() {
               var root = document.documentElement;
               if (!root) return;
+              if (!document.body) {
+                // document start: finish the job as soon as the body exists
+                new MutationObserver(function (m, o) {
+                  if (document.body) { o.disconnect(); tgmDark(); }
+                }).observe(root, { childList: true });
+              }
               // Nextcloud keys its theme variables on body attributes: [data-theme-light] / [data-theme-dark]
               if (document.body) {
                 document.body.removeAttribute('data-theme-light');
@@ -500,12 +513,16 @@ class TgmWebActivity : BaseActivity() {
                 '--color-primary-light:#3a2f1f!important;--color-primary-element-light:#3a2f1f!important;' +
                 '--color-primary-light-hover:#4a3c26!important;--color-primary-element-light-hover:#4a3c26!important;' +
                 '--color-primary-light-text:#f0c043!important;--color-primary-element-light-text:#f0c043!important}' +
-                dark + '{background:#0f0d0b!important}' +
+                dark + '{background:#0f0d0b!important}html{background:#171717}' +
                 '#tgm-cal-bar{color:#f3e7cf!important}#tgm-cal-bar button{background:#3a2f1f!important}' +
                 '.contacts-list__header .input-field__input{background:#1f1b16!important;border-color:#5a4c38!important;color:#eee!important}';
               (document.head || root).appendChild(css);
             })();
         """
+
+        /** Runs at document start; asks the app whether it is in dark mode. */
+        private const val EARLY_DARK_JS =
+            "try { if (window.TgmApp && TgmApp.night()) {" + DARK_THEME_JS + "} } catch (e) {}"
 
         /** Back to light after the phone leaves dark mode; a reload restores the page's own theme. */
         private const val LIGHT_THEME_JS = """
@@ -559,6 +576,14 @@ class TgmWebActivity : BaseActivity() {
 }
 
 /** TGM: keeps one WebView per web tab for the life of the app process. */
+/** Lets the page ask, at document start, whether the app shows dark mode. */
+private class NightBridge(private val view: WebView) {
+    @JavascriptInterface
+    fun night(): Boolean =
+        (view.context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+            Configuration.UI_MODE_NIGHT_YES
+}
+
 object TgmWebPool {
     private val views = HashMap<String, WebView>()
 
