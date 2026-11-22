@@ -493,7 +493,14 @@ class TgmWebActivity : BaseActivity() {
               (document.head || root).appendChild(link);
               var css = document.createElement('style');
               css.id = 'tgm-dark-fix';
+              var dark = 'body#body-user[data-theme-dark]';
               css.textContent = ':root{color-scheme:dark}' +
+                // TGM's light tokens (page around the cards, light gold for today) win over the theme
+                dark + ',' + dark + ' [data-themes]{--tgm-canvas:#0f0d0b!important;' +
+                '--color-primary-light:#3a2f1f!important;--color-primary-element-light:#3a2f1f!important;' +
+                '--color-primary-light-hover:#4a3c26!important;--color-primary-element-light-hover:#4a3c26!important;' +
+                '--color-primary-light-text:#f0c043!important;--color-primary-element-light-text:#f0c043!important}' +
+                dark + '{background:#0f0d0b!important}' +
                 '#tgm-cal-bar{color:#f3e7cf!important}#tgm-cal-bar button{background:#3a2f1f!important}' +
                 '.contacts-list__header .input-field__input{background:#1f1b16!important;border-color:#5a4c38!important;color:#eee!important}';
               (document.head || root).appendChild(css);
