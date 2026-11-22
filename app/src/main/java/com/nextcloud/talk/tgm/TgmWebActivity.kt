@@ -477,11 +477,19 @@ class TgmWebActivity : BaseActivity() {
         private const val DARK_THEME_JS = """
             (function () {
               var root = document.documentElement;
-              if (!root || document.getElementById('tgm-dark')) return;
+              if (!root) return;
+              // Nextcloud keys its theme variables on body attributes: [data-theme-light] / [data-theme-dark]
+              if (document.body) {
+                document.body.removeAttribute('data-theme-light');
+                document.body.removeAttribute('data-theme-default');
+                document.body.setAttribute('data-theme-dark', '');
+                document.body.setAttribute('data-themes', 'dark');
+              }
+              if (document.getElementById('tgm-dark')) return;
               var link = document.createElement('link');
               link.id = 'tgm-dark';
               link.rel = 'stylesheet';
-              link.href = '/apps/theming/theme/dark.css?plain=1';
+              link.href = '/apps/theming/theme/dark.css';
               (document.head || root).appendChild(link);
               var css = document.createElement('style');
               css.id = 'tgm-dark-fix';
@@ -492,11 +500,10 @@ class TgmWebActivity : BaseActivity() {
             })();
         """
 
+        /** Back to light after the phone leaves dark mode; a reload restores the page's own theme. */
         private const val LIGHT_THEME_JS = """
             (function () {
-              ['tgm-dark', 'tgm-dark-fix'].forEach(function (id) {
-                var e = document.getElementById(id); if (e) e.remove();
-              });
+              if (document.getElementById('tgm-dark')) location.reload();
             })();
         """
 
