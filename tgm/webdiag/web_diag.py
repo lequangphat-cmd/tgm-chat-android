@@ -71,11 +71,10 @@ def main():
         for s in SCRIPTS:
             ctx.add_init_script(s)
         page = ctx.new_page()
-        # like the app: only the first page sends basic auth, later ones ride on the session cookie
+        # every request carries basic auth (session-only login drops back to /login here)
         auth = base64.b64encode(f"{USER}:{PASSWORD}".encode()).decode()
         page.set_extra_http_headers({"Authorization": "Basic " + auth})
         page.goto(SERVER + "/apps/dashboard/", wait_until="domcontentloaded", timeout=90000)
-        page.set_extra_http_headers({})
         report["first_page"] = page.url
         timings = []
         page.on("requestfinished", lambda r: timings.append(
