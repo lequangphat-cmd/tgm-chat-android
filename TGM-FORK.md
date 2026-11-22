@@ -26,6 +26,7 @@ for TGM, locked to `https://chat.tgmdental.net`.
 | App always in Vietnamese (`tgm/TgmLocale.kt`, `attachBaseContext` override) | `application/NextcloudTalkApplication.kt`, `activities/BaseActivity.kt`, the four activities that extend `AppCompatActivity` directly |
 | Bottom tabs per contract (Phát 18/11): Tin nhắn, Danh bạ, Lịch, Tệp tin, Cài đặt (native settings); Nhiệm vụ off via `TgmTab.enabled` | `tgm/TgmTabs.kt`, `res/values*/tgm_strings.xml` |
 | CI UI tour on an emulator (test account from secrets `TGM_TEST_USER`, `TGM_TEST_APP_PASSWORD`; debug-only exported login alias) | `.github/workflows/tgm-ui-test.yml`, `tgm/uitest/ui_tour.py`, `app/src/debug/AndroidManifest.xml` |
+| CI web diag: renders Tệp tin, Lịch, Danh bạ at a phone's CSS size (default 320 px) with the app's injected scripts, optionally on an old Chromium, and uploads screenshots and a layout report | `.github/workflows/tgm-web-diag.yml`, `tgm/webdiag/web_diag.py` |
 | Notifications: 1-1 chats have no conversation title (name was shown twice); dark-mode primary colour is TGM gold instead of Nextcloud blue | `jobs/NotificationWorker.kt`, `res/values-night/colors.xml` |
 | Web tabs: old web cookies dropped once per app start (stale login-page session bounced Tệp tin to /login), text zoom capped at 115 %, algorithmic darkening on so web tabs follow dark mode | `tgm/TgmWebActivity.kt` |
 | Chat floating date: smaller raised pill, hides after 0.7 s (was 1.2 s) so it covers sender names less | `ui/chat/ChatView.kt` |
@@ -49,4 +50,3 @@ Project `tgm-dental` (Spark plan). Android app `net.tgmdental.chat` registered 1
 The app registers with the TGM push proxy at `https://chat.tgmdental.net/tgm-push`
 (no trailing slash, see `tgm-talk/push-proxy/README.md`). The proxy must hold the FCM
 service account of the same Firebase project.
-| CI web diag: renders Tệp tin, Lịch, Danh bạ at a phone's CSS size (default 320 px) with the app's injected scripts, optionally on an old Chromium, and uploads screenshots and a layout report | `.github/workflows/tgm-web-diag.yml`, `tgm/webdiag/web_diag.py` |
