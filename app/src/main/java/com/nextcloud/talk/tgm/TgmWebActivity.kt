@@ -13,6 +13,7 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.MutableContextWrapper
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
@@ -190,15 +191,41 @@ class TgmWebActivity : BaseActivity() {
         }
     }
 
-    /** Loads the other web tabs in the background once the first one is ready. */
-    private fun preloadOtherTabs() {
-        TgmTab.visible.filter { it.path != null && it != selectedTab }.forEach { tab ->
-            val (view, isNew) = TgmWebPool.obtain(this, poolKey(tab)) { context -> newWebView(context) }
-            if (isNew) {
-                attachClients(view)
-                load(view, baseUrl + tab.path)
-            }
+    /**
+     * Loads the other web tabs in the background, one at a time and only after the shown tab had time
+     * to finish its own work. All WebViews share one renderer, so loading Lịch and Tệp tin while
+     * Danh bạ was still fetching its contacts kept "Đang tải danh bạ" up for over 10 s (Note8).
+     */
+    private fun schedulePreload(delayMillis: Long) {
+        val host = container ?: return
+        host.removeCallbacks(preloadNext)
+        host.postDelayed(preloadNext, delayMillis)
+    }
+
+    private val preloadNext = Runnable {
+        if (container == null) return@Runnable
+        val tab = TgmTab.visible.firstOrNull { it.path != null && !TgmWebPool.has(poolKey(it)) } ?: return@Runnable
+        val (view, isNew) = TgmWebPool.obtain(this, poolKey(tab)) { context -> newWebView(context) }
+        if (isNew) {
+            attachClients(view)
+            load(view, baseUrl + tab.path)
         }
+    }
+
+    private val nightMode: Boolean
+        get() = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+            Configuration.UI_MODE_NIGHT_YES
+
+    /**
+     * TGM: web tabs follow the app's dark mode like the native screens. Nextcloud's own dark theme is
+     * added to the page; WebView 105+ may also darken what is left. Older WebViews (Chrome 101 on
+     * Android 9) cannot darken pages at all, so the theme stylesheet is what makes them dark there.
+     */
+    private fun applyDarkMode(view: WebView) {
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING)) {
+            WebSettingsCompat.setAlgorithmicDarkeningAllowed(view.settings, true)
+        }
+        view.evaluateJavascript(if (nightMode) DARK_THEME_JS else LIGHT_THEME_JS, null)
     }
 
     /**
@@ -225,10 +252,6 @@ class TgmWebActivity : BaseActivity() {
         view.settings.offscreenPreRaster = true
         // TGM: large system fonts broke the web layouts (Lịch title cut to "Tháng …"); cap the zoom
         view.settings.textZoom = minOf(view.settings.textZoom, MAX_TEXT_ZOOM)
-        // TGM: follow the phone's dark mode like the native screens
-        if (WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING)) {
-            WebSettingsCompat.setAlgorithmicDarkeningAllowed(view.settings, true)
-        }
         view.settings.userAgentString = view.settings.userAgentString + " TGMChatApp"
         CookieManager.getInstance().setAcceptThirdPartyCookies(view, true)
         // hide the web menu before the first paint, so the web bottom bar never flashes over the app's
@@ -241,6 +264,7 @@ class TgmWebActivity : BaseActivity() {
 
     /** Clients point at the current activity, so they are set again whenever a pooled view is shown. */
     private fun attachClients(view: WebView) {
+        applyDarkMode(view)
         view.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean =
                 handleLink(request.url)
@@ -249,12 +273,14 @@ class TgmWebActivity : BaseActivity() {
                 if (view === webView) loading = true
                 view.evaluateJavascript(SKIP_BROWSER_CHECK_JS, null)
                 view.evaluateJavascript(HIDE_WEB_SHELL_JS, null)
+                if (nightMode) view.evaluateJavascript(DARK_THEME_JS, null)
             }
 
             override fun onPageFinished(view: WebView, url: String?) {
                 view.evaluateJavascript(HIDE_WEB_SHELL_JS, null)
                 view.evaluateJavascript(CALENDAR_BAR_JS, null)
                 view.evaluateJavascript(CONTACTS_SEARCH_JS, null)
+                if (nightMode) view.evaluateJavascript(DARK_THEME_JS, null)
                 val page = url?.toUri()
                 if (page?.path?.removePrefix("/index.php")?.startsWith("/unsupported") == true) {
                     // the "continue anyway" choice is stored now, go back to the page that was asked for
@@ -280,10 +306,10 @@ class TgmWebActivity : BaseActivity() {
                 if (view === webView) {
                     loading = false
                     firstLoad = false
-                    if (!preloaded && TgmWebPool.sessionReady) {
-                        preloaded = true
-                        preloadOtherTabs()
-                    }
+                }
+                if (TgmWebPool.sessionReady && url?.startsWith(baseUrl) == true) {
+                    // the shown page keeps loading its data after this; give it time before the next tab
+                    schedulePreload(if (view === webView) PRELOAD_DELAY_MILLIS else PRELOAD_NEXT_MILLIS)
                 }
             }
         }
@@ -312,7 +338,6 @@ class TgmWebActivity : BaseActivity() {
         }
     }
 
-    private var preloaded = false
 
     /** Chat and call links open the native chat, other servers open in the browser. */
     private fun handleLink(uri: Uri): Boolean {
@@ -354,6 +379,7 @@ class TgmWebActivity : BaseActivity() {
 
     override fun onDestroy() {
         // keep the pooled WebViews alive, only let go of this activity
+        container?.removeCallbacks(preloadNext)
         container?.removeAllViews()
         container = null
         webView = null
@@ -374,6 +400,8 @@ class TgmWebActivity : BaseActivity() {
 
         private const val LOGIN_RETRIED = "tgm-login-retried"
         private const val MAX_TEXT_ZOOM = 115
+        private const val PRELOAD_DELAY_MILLIS = 6000L
+        private const val PRELOAD_NEXT_MILLIS = 3000L
 
         /**
          * Nextcloud sends older Android WebViews to an "unsupported browser" page (seen on Lịch).
@@ -442,6 +470,33 @@ class TgmWebActivity : BaseActivity() {
                 var label = document.querySelector('.contacts-list__header .input-field__label');
                 if (input && label && !input.placeholder) input.placeholder = label.textContent.trim();
               }, 500);
+            })();
+        """
+
+        /** Nextcloud's dark theme variables, applied whatever the page's own theme choice is. */
+        private const val DARK_THEME_JS = """
+            (function () {
+              var root = document.documentElement;
+              if (!root || document.getElementById('tgm-dark')) return;
+              var link = document.createElement('link');
+              link.id = 'tgm-dark';
+              link.rel = 'stylesheet';
+              link.href = '/apps/theming/theme/dark.css?plain=1';
+              (document.head || root).appendChild(link);
+              var css = document.createElement('style');
+              css.id = 'tgm-dark-fix';
+              css.textContent = ':root{color-scheme:dark}' +
+                '#tgm-cal-bar{color:#f3e7cf!important}#tgm-cal-bar button{background:#3a2f1f!important}' +
+                '.contacts-list__header .input-field__input{background:#1f1b16!important;border-color:#5a4c38!important;color:#eee!important}';
+              (document.head || root).appendChild(css);
+            })();
+        """
+
+        private const val LIGHT_THEME_JS = """
+            (function () {
+              ['tgm-dark', 'tgm-dark-fix'].forEach(function (id) {
+                var e = document.getElementById(id); if (e) e.remove();
+              });
             })();
         """
 
@@ -517,6 +572,8 @@ object TgmWebPool {
             if (wrapper?.baseContext === activity) wrapper.baseContext = activity.applicationContext
         }
     }
+
+    fun has(key: String) = views.containsKey(key)
 
     /** Drops every pooled view, e.g. after logout. */
     fun clear() {

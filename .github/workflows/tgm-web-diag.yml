@@ -14,6 +14,9 @@ on:
       playwright:
         description: Playwright version (1.22.0 bundles Chromium 101, like an old Android 9 WebView)
         default: "1.48.0"
+      dark:
+        description: Apply the app's dark theme script ("1")
+        default: "0"
 
 permissions:
   contents: read
@@ -37,9 +40,10 @@ jobs:
           TGM_TEST_APP_PASSWORD: ${{ secrets.TGM_TEST_APP_PASSWORD }}
           TGM_VIEW_W: ${{ inputs.width }}
           TGM_VIEW_H: ${{ inputs.height }}
+          TGM_DARK: ${{ inputs.dark }}
         run: python tgm/webdiag/web_diag.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: web-diag-${{ inputs.playwright }}
+          name: web-diag-${{ inputs.playwright }}-dark${{ inputs.dark }}
           path: web-diag/

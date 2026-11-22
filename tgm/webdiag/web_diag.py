@@ -30,6 +30,8 @@ def injected(name):
 SCRIPTS = [injected("SKIP_BROWSER_CHECK_JS"), injected("HIDE_WEB_SHELL_JS")]
 CAL_BAR = injected("CALENDAR_BAR_JS")
 CONTACTS = injected("CONTACTS_SEARCH_JS")
+DARK = injected("DARK_THEME_JS")
+NIGHT = os.environ.get("TGM_DARK") == "1"
 
 DESCRIBE = """
 (pts) => pts.map(([x, y]) => {
@@ -92,6 +94,8 @@ def main():
                 page.evaluate(CAL_BAR)
             if name == "contacts":
                 page.evaluate(CONTACTS)
+            if NIGHT:
+                page.evaluate(DARK)
             shots = []
             for t in (1.5, 4, 10):
                 page.wait_for_timeout(int((t - (time.time() - t0)) * 1000) if t > time.time() - t0 else 0)
