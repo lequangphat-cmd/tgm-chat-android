@@ -29,6 +29,7 @@ def injected(name):
 
 SCRIPTS = [injected("SKIP_BROWSER_CHECK_JS"), injected("HIDE_WEB_SHELL_JS")]
 CAL_BAR = injected("CALENDAR_BAR_JS")
+CONTACTS = injected("CONTACTS_SEARCH_JS")
 
 DESCRIBE = """
 (pts) => pts.map(([x, y]) => {
@@ -89,6 +90,8 @@ def main():
             page.evaluate(SCRIPTS[1])
             if name == "calendar":
                 page.evaluate(CAL_BAR)
+            if name == "contacts":
+                page.evaluate(CONTACTS)
             shots = []
             for t in (1.5, 4, 10):
                 page.wait_for_timeout(int((t - (time.time() - t0)) * 1000) if t > time.time() - t0 else 0)

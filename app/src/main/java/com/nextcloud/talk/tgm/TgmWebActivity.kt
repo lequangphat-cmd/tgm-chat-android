@@ -254,6 +254,7 @@ class TgmWebActivity : BaseActivity() {
             override fun onPageFinished(view: WebView, url: String?) {
                 view.evaluateJavascript(HIDE_WEB_SHELL_JS, null)
                 view.evaluateJavascript(CALENDAR_BAR_JS, null)
+                view.evaluateJavascript(CONTACTS_SEARCH_JS, null)
                 val page = url?.toUri()
                 if (page?.path?.removePrefix("/index.php")?.startsWith("/unsupported") == true) {
                     // the "continue anyway" choice is stored now, go back to the page that was asked for
@@ -392,7 +393,7 @@ class TgmWebActivity : BaseActivity() {
                 '#tgm-cal-bar button{border:0;background:#fff7e0;border-radius:19px;height:36px;min-width:32px;' +
                 'font:inherit;color:inherit;padding:0 6px;flex:none}' +
                 '#tgm-cal-bar .d{font-size:13px;padding:0 9px}' +
-                '#tgm-cal-bar .t{flex:1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}';
+                '#tgm-cal-bar .t{flex:1;font-size:14px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}';
               document.head.appendChild(css);
               var bar = document.createElement('div');
               bar.id = 'tgm-cal-bar';
@@ -416,6 +417,30 @@ class TgmWebActivity : BaseActivity() {
               }
               title();
               setInterval(title, 500);
+            })();
+        """
+
+        /**
+         * Danh bạ's search field floats its label above the box and loses its border on older WebViews
+         * (Chrome 101 on Android 9). Draw a plain box with the label as placeholder instead.
+         */
+        private const val CONTACTS_SEARCH_JS = """
+            (function () {
+              if (location.pathname.indexOf('/apps/contacts') < 0 || window.tgmContactsSearch) return;
+              window.tgmContactsSearch = true;
+              var css = document.createElement('style');
+              css.textContent =
+                '.contacts-list__header .input-field__label{display:none!important}' +
+                '.contacts-list__header .input-field__input{height:36px!important;padding:0 12px!important;' +
+                'border:2px solid #ddd3c4!important;border-radius:18px!important;background:#fff!important;' +
+                'font-size:15px!important;box-sizing:border-box!important}' +
+                '.contacts-list__header .input-field__input:focus{border-color:#c4962a!important}';
+              document.head.appendChild(css);
+              setInterval(function () {
+                var input = document.querySelector('.contacts-list__header .input-field__input');
+                var label = document.querySelector('.contacts-list__header .input-field__label');
+                if (input && label && !input.placeholder) input.placeholder = label.textContent.trim();
+              }, 500);
             })();
         """
 
