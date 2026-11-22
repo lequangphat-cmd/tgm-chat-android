@@ -434,7 +434,8 @@ class TgmWebActivity : BaseActivity() {
                 '.contacts-list__header .input-field__input{height:36px!important;padding:0 12px!important;' +
                 'border:2px solid #ddd3c4!important;border-radius:18px!important;background:#fff!important;' +
                 'font-size:15px!important;box-sizing:border-box!important}' +
-                '.contacts-list__header .input-field__input:focus{border-color:#c4962a!important}';
+                '.contacts-list__header .input-field__input:focus{border-color:#c4962a!important}' +
+                '.contacts-list__header .input-field__input::placeholder{color:#8a7f72!important;opacity:1!important}';
               document.head.appendChild(css);
               setInterval(function () {
                 var input = document.querySelector('.contacts-list__header .input-field__input');
