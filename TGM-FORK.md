@@ -27,6 +27,7 @@ for TGM, locked to `https://chat.tgmdental.net`.
 | Bottom tabs per contract (Phát 18/11): Tin nhắn, Danh bạ, Lịch, Tệp tin, Cài đặt (native settings); Nhiệm vụ off via `TgmTab.enabled` | `tgm/TgmTabs.kt`, `res/values*/tgm_strings.xml` |
 | CI UI tour on an emulator (test account from secrets `TGM_TEST_USER`, `TGM_TEST_APP_PASSWORD`; debug-only exported login alias) | `.github/workflows/tgm-ui-test.yml`, `tgm/uitest/ui_tour.py`, `app/src/debug/AndroidManifest.xml` |
 | CI web diag: renders Tệp tin, Lịch, Danh bạ at a phone's CSS size (default 320 px) with the app's injected scripts, optionally on an old Chromium, and uploads screenshots and a layout report | `.github/workflows/tgm-web-diag.yml`, `tgm/webdiag/web_diag.py` |
+| No location or phone contacts permission (sharing them is hidden, not in the contract; Play would ask for a reason): removed with `tools:node="remove"`, phone book sync setting hidden | `AndroidManifest.xml`, `settings/SettingsActivity.kt` |
 | Notifications: 1-1 chats have no conversation title (name was shown twice); dark-mode primary colour is TGM gold instead of Nextcloud blue | `jobs/NotificationWorker.kt`, `res/values-night/colors.xml` |
 | Web tabs: old web cookies dropped once per app start (stale login-page session bounced Tệp tin to /login), text zoom capped at 115 %, algorithmic darkening on so web tabs follow dark mode | `tgm/TgmWebActivity.kt` |
 | Chat floating date: smaller raised pill, hides after 0.7 s (was 1.2 s) so it covers sender names less | `ui/chat/ChatView.kt` |

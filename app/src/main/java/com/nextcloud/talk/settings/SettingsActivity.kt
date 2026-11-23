@@ -340,7 +340,9 @@ class SettingsActivity :
     }
 
     private fun setupPhoneBookIntegration(isOnline: Boolean) {
-        if (CapabilitiesUtil.hasSpreedFeatureCapability(
+        // TGM: no phone contacts permission in this app (not in the contract), so no phone book sync
+        if (TGM_PHONE_BOOK_ENABLED &&
+            CapabilitiesUtil.hasSpreedFeatureCapability(
                 currentUser?.capabilities?.spreedCapability,
                 SpreedFeatures.PHONEBOOK_SEARCH
             ) &&
@@ -1743,3 +1745,6 @@ class SettingsActivity :
         private const val DIALOG_SPACING_DP = 8
     }
 }
+
+/** TGM: phone book integration needs READ/WRITE_CONTACTS, which the TGM app does not request. */
+private const val TGM_PHONE_BOOK_ENABLED = false
